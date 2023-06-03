@@ -6,12 +6,14 @@
 #include "GameFramework/GameModeBase.h"
 #include "WOTFGameModeBase.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class WOTF_API AWOTFGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
+
+public:
+	AWOTFGameModeBase();
+
+protected:
+	virtual void BeginPlay() override;
 };
