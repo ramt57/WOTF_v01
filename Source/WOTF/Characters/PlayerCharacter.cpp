@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "WOTF/utils/FLogUtil.h"
 
 
 // Sets default values
@@ -27,7 +28,7 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
 			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -40,8 +41,8 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
-
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	FLogUtil::Warning(TEXT("Moving Character"));
 	if (Controller != nullptr)
 	{
 		// add movement 
@@ -53,7 +54,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 void APlayerCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
