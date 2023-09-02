@@ -5,7 +5,9 @@
 /Intermediate/
 /Saved/
 /.idea/
-
+# Temprary need to remove it 
+/Content
+*.uasset
 # Visual Studio generated files
 *.sln
 *.vcxproj
