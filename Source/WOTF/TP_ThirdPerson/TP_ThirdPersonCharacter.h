@@ -3,13 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CharacterInterface.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "TP_ThirdPersonCharacter.generated.h"
 
 
 UCLASS(config=Game)
-class ATP_ThirdPersonCharacter : public ACharacter
+class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 {
 	GENERATED_BODY()
 
@@ -20,7 +21,7 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
-	
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -37,23 +38,29 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+private:
+	/* Line Trace Under Crosshairs*/
+	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
+	bool bShouldStartItemLineTrace;
+	AActor* LastHitItemBase;
+	void StartLineTraceForItems();
+	virtual void SetCanLineTraceItems_Implementation(bool bCanLineTrace) override;
+
 public:
 	ATP_ThirdPersonCharacter();
-	
+	virtual void Tick(float DeltaSeconds) override;
 
 protected:
-
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
 
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+
 	// To add mapping context
 	virtual void BeginPlay();
 
@@ -63,4 +70,3 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
-

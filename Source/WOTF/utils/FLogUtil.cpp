@@ -16,3 +16,12 @@ void FLogUtil::Error(const FString& Message)
 {
 	UE_LOG(LogUtil, Error, TEXT("%s"), *Message);
 }
+
+void FLogUtil::PrintString(const FString& Message)
+{
+	// Display the message on screen
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, Message);
+	}
+}

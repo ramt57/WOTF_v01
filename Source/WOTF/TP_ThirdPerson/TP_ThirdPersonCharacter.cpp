@@ -9,16 +9,59 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Kismet/GameplayStatics.h"
+#include "WOTF/Items/ItemInterface.h"
+#include "WOTF/utils/FLogUtil.h"
 
 
 //////////////////////////////////////////////////////////////////////////
 // ATP_ThirdPersonCharacter
 
+bool ATP_ThirdPersonCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
+{
+	/* Get ViewPort Size */
+	FVector2D ViewPortSize;
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewPortSize);
+	}
+
+	/* Get Screen space location of cross hairs which is usually a center of screen for most of the games*/
+	const FVector2D CrosshairLocation(ViewPortSize.X / 2.f, ViewPortSize.Y / 2.f);
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+
+	/* Get World position and direction of cross hairs */
+	if (UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
+	                                             CrosshairLocation,
+	                                             CrosshairWorldPosition,
+	                                             CrosshairWorldDirection))
+	{
+		/* Trace from cross hairs world location outward */
+		const FVector Start = {CrosshairWorldPosition};
+		const FVector End = {Start + CrosshairWorldDirection * 50000.f};
+		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, ECC_Visibility);
+		if (OutHitResult.bBlockingHit)
+		{
+			// If hit occurred, draw the line in green
+			// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
+			return true;
+		}
+	}
+	return false;
+}
+
+void ATP_ThirdPersonCharacter::SetCanLineTraceItems_Implementation(bool bCanLineTrace)
+{
+	bShouldStartItemLineTrace = bCanLineTrace;
+}
+
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -44,11 +87,76 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	bShouldStartItemLineTrace = false;
+}
+
+void ATP_ThirdPersonCharacter::StartLineTraceForItems()
+{
+	if (bShouldStartItemLineTrace)
+	{
+		FHitResult OutHitResult;
+		TraceUnderCrosshairs(OutHitResult);
+		if (OutHitResult.bBlockingHit)
+		{
+			if (OutHitResult.GetActor()->GetClass()->ImplementsInterface(UItemInterface::StaticClass()))
+			{
+				// Show the widget if it's a valid item
+				if (LastHitItemBase != nullptr && LastHitItemBase != OutHitResult.GetActor())
+				{
+					// Hide the previous widget if it exists
+					if (LastHitItemBase != nullptr)
+					{
+						IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
+					}
+
+					// Show the widget for the new item
+					LastHitItemBase = OutHitResult.GetActor();
+					IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(OutHitResult.GetActor(), true);
+				}
+				else
+				{
+					LastHitItemBase = OutHitResult.GetActor();
+					IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(OutHitResult.GetActor(), true);
+				}
+			}
+			else
+			{
+				if (!ensure(LastHitItemBase == nullptr))
+				{
+					IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
+					LastHitItemBase = nullptr;
+				}
+			}
+		}
+		else
+		{
+			if (!ensure(LastHitItemBase == nullptr))
+			{
+				IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
+				LastHitItemBase = nullptr;
+			}
+		}
+	}
+	else
+	{
+		if (!ensure(LastHitItemBase == nullptr))
+		{
+			IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
+			LastHitItemBase = nullptr;
+		}
+	}
+}
+
+void ATP_ThirdPersonCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	StartLineTraceForItems();
 }
 
 void ATP_ThirdPersonCharacter::BeginPlay()
@@ -57,9 +165,10 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
+			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
@@ -72,8 +181,8 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
 		//Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
@@ -83,15 +192,13 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Look);
-
 	}
-
 }
 
 void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
+	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
@@ -101,7 +208,7 @@ void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
 
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
+
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
@@ -114,7 +221,7 @@ void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
 void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
@@ -123,7 +230,3 @@ void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
-
-
-
-

@@ -11,4 +11,5 @@ public:
 	static void Log(const FString& Message);
 	static void Warning(const FString& Message);
 	static void Error(const FString& Message);
+	static void PrintString(const FString& Message);
 };
