@@ -7,6 +7,8 @@
 #include "GameFramework/Actor.h"
 #include "ItemBase.generated.h"
 
+enum class EItemState : uint8;
+
 UCLASS()
 class WOTF_API AItemBase : public AActor, public IItemInterface
 {
@@ -29,14 +31,17 @@ protected:
 		const FHitResult& SweepResult
 	);
 	UFUNCTION()
-	void OnSphereOverlapEnd(
+	virtual void OnSphereOverlapEnd(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComponent,
 		int32 OtherBodyIndex
 	);
+	
 
 public:
+	UPROPERTY()
+	bool bCharacterCanStartLineTrace = false;
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -52,7 +57,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	class USphereComponent* SphereComponent;
-
-private:
+	
+	UPROPERTY(VisibleAnywhere)
+	EItemState ItemState;
+	
 	virtual void ToggleVisibilityOfItemPickupWidget_Implementation(bool Visibility) override;
 };

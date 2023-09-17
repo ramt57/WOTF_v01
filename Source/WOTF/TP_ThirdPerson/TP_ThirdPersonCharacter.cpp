@@ -10,6 +10,8 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
+#include "WOTF/Items/ItemBase.h"
 #include "WOTF/Items/ItemInterface.h"
 #include "WOTF/utils/FLogUtil.h"
 
@@ -51,14 +53,22 @@ bool ATP_ThirdPersonCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 	return false;
 }
 
-void ATP_ThirdPersonCharacter::SetCanLineTraceItems_Implementation(bool bCanLineTrace)
+void ATP_ThirdPersonCharacter::OnRep_OverlappedItemBase(AItemBase* PrevValue) const
 {
-	bShouldStartItemLineTrace = bCanLineTrace;
+	if (PrevValue && PrevValue->bCharacterCanStartLineTrace)
+	{
+		PrevValue->bCharacterCanStartLineTrace = false;
+	}
+	if (OverlappedItemBase)
+	{
+		OverlappedItemBase->bCharacterCanStartLineTrace = true;
+	}
 }
 
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -93,12 +103,11 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
-	bShouldStartItemLineTrace = false;
 }
 
 void ATP_ThirdPersonCharacter::StartLineTraceForItems()
 {
-	if (bShouldStartItemLineTrace)
+	if (OverlappedItemBase && OverlappedItemBase->bCharacterCanStartLineTrace)
 	{
 		FHitResult OutHitResult;
 		TraceUnderCrosshairs(OutHitResult);
@@ -114,7 +123,6 @@ void ATP_ThirdPersonCharacter::StartLineTraceForItems()
 					{
 						IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
 					}
-
 					// Show the widget for the new item
 					LastHitItemBase = OutHitResult.GetActor();
 					IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(OutHitResult.GetActor(), true);
@@ -153,6 +161,20 @@ void ATP_ThirdPersonCharacter::StartLineTraceForItems()
 	}
 }
 
+void ATP_ThirdPersonCharacter::SetOverlappedItemBase_Implementation(AItemBase* ItemBase)
+{
+	/* Clear any data previously*/
+	if (OverlappedItemBase && IsLocallyControlled() && OverlappedItemBase->bCharacterCanStartLineTrace)
+	{
+		OverlappedItemBase->bCharacterCanStartLineTrace = false;
+	}
+	this->OverlappedItemBase = ItemBase;
+	if (OverlappedItemBase && IsLocallyControlled())
+	{
+		OverlappedItemBase->bCharacterCanStartLineTrace = true;
+	}
+}
+
 void ATP_ThirdPersonCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -163,7 +185,6 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
-
 	//Add Input Mapping Context
 	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -174,9 +195,6 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 		}
 	}
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Input
 
 void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -229,4 +247,14 @@ void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void ATP_ThirdPersonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ATP_ThirdPersonCharacter, PrimaryWeapon);
+	DOREPLIFETIME(ATP_ThirdPersonCharacter, MeleeWeapon);
+	DOREPLIFETIME(ATP_ThirdPersonCharacter, SecondaryWeapon);
+	DOREPLIFETIME(ATP_ThirdPersonCharacter, ThrowableWeapons);
+	DOREPLIFETIME_CONDITION(ATP_ThirdPersonCharacter, OverlappedItemBase, COND_OwnerOnly);
 }

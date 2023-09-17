@@ -38,13 +38,48 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	UPROPERTY(Replicated)
+	class AWeaponBase* PrimaryWeapon;
+	UPROPERTY(Replicated)
+	AWeaponBase* SecondaryWeapon;
+	UPROPERTY(Replicated)
+	AWeaponBase* MeleeWeapon;
+	UPROPERTY(Replicated)
+	TArray<AWeaponBase*> ThrowableWeapons;
+
+public:
+	FORCEINLINE void SetPrimaryWeapon(AWeaponBase* Weapon)
+	{
+		this->PrimaryWeapon = Weapon;
+	}
+
+	FORCEINLINE void SetSecondaryWeapon(AWeaponBase* Weapon)
+	{
+		this->SecondaryWeapon = Weapon;
+	}
+
+	FORCEINLINE void SetMeleeWeapon(AWeaponBase* Weapon)
+	{
+		this->MeleeWeapon = Weapon;
+	}
+
+	FORCEINLINE void SetThrowableWeapons(const TArray<AWeaponBase*>& Weapons)
+	{
+		this->ThrowableWeapons = Weapons;
+	}
+
 private:
 	/* Line Trace Under Crosshairs*/
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
-	bool bShouldStartItemLineTrace;
+
+	UPROPERTY(ReplicatedUsing = OnRep_OverlappedItemBase)
+	class AItemBase* OverlappedItemBase;
+	UFUNCTION()
+	void OnRep_OverlappedItemBase(AItemBase* PrevValue) const;
+	UPROPERTY()
 	AActor* LastHitItemBase;
 	void StartLineTraceForItems();
-	virtual void SetCanLineTraceItems_Implementation(bool bCanLineTrace) override;
+	virtual void SetOverlappedItemBase_Implementation(AItemBase* ItemBase) override;
 
 public:
 	ATP_ThirdPersonCharacter();
@@ -56,6 +91,8 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	// APawn interface
