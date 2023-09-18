@@ -19,12 +19,4 @@ class WOTF_API AWeaponBase : public AItemBase
 public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
-
-
-	virtual void OnSphereOverlapEnd(
-		UPrimitiveComponent* OverlappedComponent,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComponent,
-		int32 OtherBodyIndex
-	) override;
 };

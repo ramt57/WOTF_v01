@@ -9,6 +9,8 @@
 #include "TP_ThirdPersonCharacter.generated.h"
 
 
+class UCombatComponent;
+
 UCLASS(config=Game)
 class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 {
@@ -38,35 +40,13 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
-	UPROPERTY(Replicated)
-	class AWeaponBase* PrimaryWeapon;
-	UPROPERTY(Replicated)
-	AWeaponBase* SecondaryWeapon;
-	UPROPERTY(Replicated)
-	AWeaponBase* MeleeWeapon;
-	UPROPERTY(Replicated)
-	TArray<AWeaponBase*> ThrowableWeapons;
+	/** Pick Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* PickAction;
 
-public:
-	FORCEINLINE void SetPrimaryWeapon(AWeaponBase* Weapon)
-	{
-		this->PrimaryWeapon = Weapon;
-	}
-
-	FORCEINLINE void SetSecondaryWeapon(AWeaponBase* Weapon)
-	{
-		this->SecondaryWeapon = Weapon;
-	}
-
-	FORCEINLINE void SetMeleeWeapon(AWeaponBase* Weapon)
-	{
-		this->MeleeWeapon = Weapon;
-	}
-
-	FORCEINLINE void SetThrowableWeapons(const TArray<AWeaponBase*>& Weapons)
-	{
-		this->ThrowableWeapons = Weapons;
-	}
+	
+	UPROPERTY(VisibleAnywhere)
+	UCombatComponent* CombatComponent;
 
 private:
 	/* Line Trace Under Crosshairs*/
@@ -91,6 +71,9 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+	
+	/** Called for pick input */
+	void Pick(const FInputActionValue& Value);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

@@ -9,6 +9,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/CombatComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "WOTF/Items/ItemBase.h"
@@ -19,51 +20,6 @@
 //////////////////////////////////////////////////////////////////////////
 // ATP_ThirdPersonCharacter
 
-bool ATP_ThirdPersonCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
-{
-	/* Get ViewPort Size */
-	FVector2D ViewPortSize;
-	if (GEngine && GEngine->GameViewport)
-	{
-		GEngine->GameViewport->GetViewportSize(ViewPortSize);
-	}
-
-	/* Get Screen space location of cross hairs which is usually a center of screen for most of the games*/
-	const FVector2D CrosshairLocation(ViewPortSize.X / 2.f, ViewPortSize.Y / 2.f);
-	FVector CrosshairWorldPosition;
-	FVector CrosshairWorldDirection;
-
-	/* Get World position and direction of cross hairs */
-	if (UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
-	                                             CrosshairLocation,
-	                                             CrosshairWorldPosition,
-	                                             CrosshairWorldDirection))
-	{
-		/* Trace from cross hairs world location outward */
-		const FVector Start = {CrosshairWorldPosition};
-		const FVector End = {Start + CrosshairWorldDirection * 50000.f};
-		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, ECC_Visibility);
-		if (OutHitResult.bBlockingHit)
-		{
-			// If hit occurred, draw the line in green
-			// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
-			return true;
-		}
-	}
-	return false;
-}
-
-void ATP_ThirdPersonCharacter::OnRep_OverlappedItemBase(AItemBase* PrevValue) const
-{
-	if (PrevValue && PrevValue->bCharacterCanStartLineTrace)
-	{
-		PrevValue->bCharacterCanStartLineTrace = false;
-	}
-	if (OverlappedItemBase)
-	{
-		OverlappedItemBase->bCharacterCanStartLineTrace = true;
-	}
-}
 
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 {
@@ -101,8 +57,100 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
+	CombatComponent->SetIsReplicated(true);
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+}
+
+
+void ATP_ThirdPersonCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	StartLineTraceForItems();
+}
+
+void ATP_ThirdPersonCharacter::BeginPlay()
+{
+	// Call the base class  
+	Super::BeginPlay();
+	//Add Input Mapping Context
+	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
+			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+}
+
+void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+{
+	// Set up action bindings
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		//Jumping
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+		//Moving
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Move);
+
+		//Looking
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Look);
+
+		// Picking
+		EnhancedInputComponent->BindAction(PickAction, ETriggerEvent::Triggered, this,  &ATP_ThirdPersonCharacter::Pick);
+	}
+}
+
+void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		// find out which way is forward
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// get forward vector
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+		// get right vector 
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+		// add movement 
+		AddMovementInput(ForwardDirection, MovementVector.Y);
+		AddMovementInput(RightDirection, MovementVector.X);
+	}
+}
+
+void ATP_ThirdPersonCharacter::Pick(const FInputActionValue& Value)
+{
+	FLogUtil::PrintString("Life is sex");
+}
+
+void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	const FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		// add yaw and pitch input to controller
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+
+void ATP_ThirdPersonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ATP_ThirdPersonCharacter, OverlappedItemBase, COND_OwnerOnly);
 }
 
 void ATP_ThirdPersonCharacter::StartLineTraceForItems()
@@ -175,86 +223,48 @@ void ATP_ThirdPersonCharacter::SetOverlappedItemBase_Implementation(AItemBase* I
 	}
 }
 
-void ATP_ThirdPersonCharacter::Tick(float DeltaSeconds)
+bool ATP_ThirdPersonCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 {
-	Super::Tick(DeltaSeconds);
-	StartLineTraceForItems();
-}
-
-void ATP_ThirdPersonCharacter::BeginPlay()
-{
-	// Call the base class  
-	Super::BeginPlay();
-	//Add Input Mapping Context
-	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	/* Get ViewPort Size */
+	FVector2D ViewPortSize;
+	if (GEngine && GEngine->GameViewport)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
-			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		GEngine->GameViewport->GetViewportSize(ViewPortSize);
+	}
+
+	/* Get Screen space location of cross hairs which is usually a center of screen for most of the games*/
+	const FVector2D CrosshairLocation(ViewPortSize.X / 2.f, ViewPortSize.Y / 2.f);
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+
+	/* Get World position and direction of cross hairs */
+	if (UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
+	                                             CrosshairLocation,
+	                                             CrosshairWorldPosition,
+	                                             CrosshairWorldDirection))
+	{
+		/* Trace from cross hairs world location outward */
+		const FVector Start = {CrosshairWorldPosition};
+		const FVector End = {Start + CrosshairWorldDirection * 50000.f};
+		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, ECC_Visibility);
+		if (OutHitResult.bBlockingHit)
 		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			// If hit occurred, draw the line in green
+			// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
+			return true;
 		}
 	}
+	return false;
 }
 
-void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+void ATP_ThirdPersonCharacter::OnRep_OverlappedItemBase(AItemBase* PrevValue) const
 {
-	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	if (PrevValue && PrevValue->bCharacterCanStartLineTrace)
 	{
-		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
-		//Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Move);
-
-		//Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Look);
+		PrevValue->bCharacterCanStartLineTrace = false;
 	}
-}
-
-void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
-{
-	// input is a Vector2D
-	const FVector2D MovementVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
+	if (OverlappedItemBase)
 	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		OverlappedItemBase->bCharacterCanStartLineTrace = true;
 	}
-}
-
-void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
-{
-	// input is a Vector2D
-	const FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
-	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
-	}
-}
-
-void ATP_ThirdPersonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ATP_ThirdPersonCharacter, PrimaryWeapon);
-	DOREPLIFETIME(ATP_ThirdPersonCharacter, MeleeWeapon);
-	DOREPLIFETIME(ATP_ThirdPersonCharacter, SecondaryWeapon);
-	DOREPLIFETIME(ATP_ThirdPersonCharacter, ThrowableWeapons);
-	DOREPLIFETIME_CONDITION(ATP_ThirdPersonCharacter, OverlappedItemBase, COND_OwnerOnly);
 }
