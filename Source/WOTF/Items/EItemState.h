@@ -10,3 +10,12 @@ enum class EItemState : uint8
 	Equipped UMETA(DisplayName = "Equipped"),
 	MaxCount UMETA(DisplayName = "DefaultMAX")
 };
+
+UENUM(BlueprintType)
+enum class  EItemType: uint8
+{
+	Aid UMETA(DisplayName ="Aid"),
+	Weapon UMETA(DisplayName ="Weapon"),
+	Key UMETA(DisplayName ="Key"),
+	Misc UMETA(DisplayName ="Misc"),
+};

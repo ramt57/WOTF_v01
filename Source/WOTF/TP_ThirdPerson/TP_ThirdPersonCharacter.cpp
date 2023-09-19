@@ -9,11 +9,13 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Components/CombatComponent.h"
+#include "CharactersComp/ActionCombat.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "WOTF/Items/EItemState.h"
 #include "WOTF/Items/ItemBase.h"
 #include "WOTF/Items/ItemInterface.h"
+#include "WOTF/Items/Weapons/WeaponBase.h"
 #include "WOTF/utils/FLogUtil.h"
 
 
@@ -57,8 +59,9 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
-	CombatComponent->SetIsReplicated(true);
+	ActionCombat = CreateDefaultSubobject<UActionCombat>(TEXT("Action"));
+	ActionCombat->SetIsReplicated(true);
+	
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -101,7 +104,7 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Look);
 
 		// Picking
-		EnhancedInputComponent->BindAction(PickAction, ETriggerEvent::Triggered, this,  &ATP_ThirdPersonCharacter::Pick);
+		EnhancedInputComponent->BindAction(PickAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Pick);
 	}
 }
 
@@ -128,9 +131,33 @@ void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void ATP_ThirdPersonCharacter::Pick(const FInputActionValue& Value)
+void ATP_ThirdPersonCharacter::Pick()
 {
-	FLogUtil::PrintString("Life is sex");
+	if (OverlappedItemBase && OverlappedItemBase->GetWidgetVisibility())
+	{
+		switch (OverlappedItemBase->ItemType)
+		{
+		case EItemType::Weapon:
+			{
+				if (ActionCombat)
+				{
+					ActionCombat->EquippedWeapon(this, Cast<AWeaponBase>(OverlappedItemBase));
+				}
+			}
+		default:
+			{
+			}
+		}
+	}
+	else
+	{
+		FLogUtil::PrintString("Hidden");
+	}
+}
+
+void ATP_ThirdPersonCharacter::EquippedWeapon(ACharacter* Character, AWeaponBase* Weapon)
+{
+	FLogUtil::PrintString("Secondary Weapon Pick");
 }
 
 void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
@@ -151,6 +178,15 @@ void ATP_ThirdPersonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ATP_ThirdPersonCharacter, OverlappedItemBase, COND_OwnerOnly);
+}
+
+void ATP_ThirdPersonCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if(ActionCombat)
+	{
+		ActionCombat->OnEquipWeapon.AddDynamic(this, &ATP_ThirdPersonCharacter::EquippedWeapon);
+	}
 }
 
 void ATP_ThirdPersonCharacter::StartLineTraceForItems()

@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "ItemInterface.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/Actor.h"
 #include "ItemBase.generated.h"
 
+enum class EItemType : uint8;
 enum class EItemState : uint8;
 
 UCLASS()
@@ -42,6 +44,18 @@ protected:
 public:
 	UPROPERTY()
 	bool bCharacterCanStartLineTrace = false;
+	
+	UPROPERTY(EditAnywhere)
+	EItemType ItemType;
+	
+	UPROPERTY(VisibleAnywhere)
+	EItemState ItemState;
+
+	UFUNCTION()
+	FORCEINLINE bool GetWidgetVisibility()
+	{
+		return WidgetComponent->IsVisible();
+	}
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -57,9 +71,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	class USphereComponent* SphereComponent;
-	
-	UPROPERTY(VisibleAnywhere)
-	EItemState ItemState;
 	
 	virtual void ToggleVisibilityOfItemPickupWidget_Implementation(bool Visibility) override;
 };

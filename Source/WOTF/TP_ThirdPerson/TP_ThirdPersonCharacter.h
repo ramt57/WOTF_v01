@@ -8,9 +8,6 @@
 #include "InputActionValue.h"
 #include "TP_ThirdPersonCharacter.generated.h"
 
-
-class UCombatComponent;
-
 UCLASS(config=Game)
 class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 {
@@ -44,11 +41,6 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PickAction;
 
-	
-	UPROPERTY(VisibleAnywhere)
-	UCombatComponent* CombatComponent;
-
-private:
 	/* Line Trace Under Crosshairs*/
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
 
@@ -60,11 +52,12 @@ private:
 	AActor* LastHitItemBase;
 	void StartLineTraceForItems();
 	virtual void SetOverlappedItemBase_Implementation(AItemBase* ItemBase) override;
-
+	
+	UPROPERTY(Category="Action Combat", VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	class UActionCombat* ActionCombat;
 public:
 	ATP_ThirdPersonCharacter();
 	virtual void Tick(float DeltaSeconds) override;
-
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -73,10 +66,13 @@ protected:
 	void Look(const FInputActionValue& Value);
 	
 	/** Called for pick input */
-	void Pick(const FInputActionValue& Value);
+	void Pick();
+	
+	UFUNCTION()
+	void EquippedWeapon(ACharacter* Character, class AWeaponBase* Weapon);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void PostInitializeComponents() override;
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

@@ -14,9 +14,8 @@ UCLASS()
 class WOTF_API AWeaponBase : public AItemBase
 {
 	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere)
-	EWeaponType WeaponType;
 public:
-	// Sets default values for this actor's properties
 	AWeaponBase();
+	UPROPERTY(EditDefaultsOnly)
+	EWeaponType WeaponType;
 };
