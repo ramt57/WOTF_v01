@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "ActionCombat.generated.h"
+class AItemBase;
 class AWeaponBase;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquippedWeapon, ACharacter*, Character, AWeaponBase*, WeaponB);
 
@@ -20,7 +21,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
+
 public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
@@ -28,20 +29,23 @@ public:
 
 private:
 	UPROPERTY(Replicated, VisibleAnywhere)
-	class ATP_ThirdPersonCharacter* ThirdPersonCharacter;
-	UPROPERTY(Replicated, VisibleAnywhere)
 	AWeaponBase* PrimaryWeapon;
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	AWeaponBase* SecondaryWeapon;
 	UPROPERTY(Replicated, VisibleAnywhere)
 	AWeaponBase* MeleeWeapon;
 	UPROPERTY(Replicated, VisibleAnywhere)
 	TArray<AWeaponBase*> ThrowableWeapons;
-	
+
 	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
 	FOnEquippedWeapon OnEquipWeapon;
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
+	void EquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
+
 public:
 	UFUNCTION()
-	void EquippedWeapon(ACharacter* Character,AWeaponBase* Weapon);
+	void PickupItem(ACharacter* Character, AItemBase* Weapon);
 	friend class ATP_ThirdPersonCharacter;
 };

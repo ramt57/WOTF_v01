@@ -1,13 +1,12 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "ItemBase.h"
 
+#include "EItemState.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "WOTF/TP_ThirdPerson/CharacterInterface.h"
-#include "WOTF/utils/FLogUtil.h"
 
 
 // Sets default values
@@ -76,6 +75,44 @@ void AItemBase::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComponent, AAc
 	}
 }
 
+void AItemBase::OnRep_ItemState() const
+{
+	InvalidateItemState();
+}
+
+void AItemBase::InvalidateItemState() const
+{
+	switch (ItemState)
+	{
+	case EItemState::Initial:
+		{
+			/* Enable Collision */
+			SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		}
+	case EItemState::Equipped:
+		{
+			WidgetComponent->SetVisibility(false);
+			/* Ignore & Disable collision for all channel */
+			SphereComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	case EItemState::Dropped:
+		{
+		}
+	case EItemState::Pickup: break;
+	case EItemState::AddedToInventory: break;
+	case EItemState::MaxCount: break;
+	default: ;
+	}
+}
+
+void AItemBase::SetItemState(const EItemState State)
+{
+	this->ItemState = State;
+	InvalidateItemState();
+}
+
 // Called every frame
 void AItemBase::Tick(float DeltaTime)
 {
@@ -88,4 +125,10 @@ void AItemBase::ToggleVisibilityOfItemPickupWidget_Implementation(const bool Vis
 	{
 		WidgetComponent->SetVisibility(Visibility);
 	}
+}
+
+void AItemBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AItemBase, ItemState);
 }

@@ -28,7 +28,6 @@ void UActionCombat::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-	
 }
 
 void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -36,7 +35,6 @@ void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UActionCombat, PrimaryWeapon);
 	DOREPLIFETIME(UActionCombat, MeleeWeapon);
-	DOREPLIFETIME(UActionCombat, SecondaryWeapon);
 	DOREPLIFETIME(UActionCombat, ThrowableWeapons);
 }
 
@@ -48,39 +46,58 @@ void UActionCombat::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	// ...
 }
 
-void UActionCombat::EquippedWeapon(ACharacter* Character, AWeaponBase* Weapon)
+void UActionCombat::ServerEquipWeapon_Implementation(ACharacter* Character, AWeaponBase* Weapon)
 {
-	if (Weapon)
+	EquipWeapon(Character, Weapon);
+}
+
+void UActionCombat::EquipWeapon(ACharacter* Character, AWeaponBase* Weapon)
+{
+	switch (Weapon->WeaponType)
 	{
-		switch (Weapon->WeaponType)
+	case EWeaponType::Melee: break;
+	case EWeaponType::Primary: break;
+	case EWeaponType::Secondary:
 		{
-		case EWeaponType::Melee:
+			SecondaryWeapon = Weapon;
+			SecondaryWeapon->SetItemState(EItemState::Equipped);
+			if (const USkeletalMeshSocket* MeshSocket = Character->GetMesh()->GetSocketByName(
+				FName("hand_rSocket")))
 			{
+				MeshSocket->AttachActor(Weapon, Character->GetMesh());
 			}
-		case EWeaponType::Primary:
+			SecondaryWeapon->SetOwner(Character);
+			OnEquipWeapon.Broadcast(Character, Weapon);
+			break;
+		}
+	case EWeaponType::Throwable: break;
+	default: ;
+	}
+}
+
+void UActionCombat::PickupItem(ACharacter* Character, AItemBase* Item)
+{
+	if (Item)
+	{
+		switch (Item->GetItemType())
+		{
+		case EItemType::Weapon:
 			{
-			}
-		case EWeaponType::Secondary:
-			{
-				SecondaryWeapon = Weapon;
-				SecondaryWeapon->ItemState = EItemState::Equipped;
-				if(const USkeletalMeshSocket* MeshSocket = Character->GetMesh()->GetSocketByName(FName("hand_rSocket")))
+				if (GetOwner()->HasAuthority())
 				{
-					MeshSocket->AttachActor(Weapon, Character->GetMesh());
+					EquipWeapon(Character, Cast<AWeaponBase>(Item));
 				}
-				SecondaryWeapon->SetOwner(Character);
-				if (SecondaryWeapon->GetClass()->ImplementsInterface(UItemInterface::StaticClass()))
+				else
 				{
-					SecondaryWeapon->Execute_ToggleVisibilityOfItemPickupWidget(SecondaryWeapon, false);
+					ServerEquipWeapon(Character, Cast<AWeaponBase>(Item));
 				}
-				OnEquipWeapon.Broadcast(Character, Weapon);
+
+				break;
 			}
-		case EWeaponType::Throwable:
-			{
-			}
-		default:
-			{
-			}
+		case EItemType::Aid: break;
+		case EItemType::Key: break;
+		case EItemType::Misc: break;
+		default: ;
 		}
 	}
 }

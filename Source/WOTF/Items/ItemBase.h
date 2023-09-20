@@ -45,12 +45,6 @@ public:
 	UPROPERTY()
 	bool bCharacterCanStartLineTrace = false;
 	
-	UPROPERTY(EditAnywhere)
-	EItemType ItemType;
-	
-	UPROPERTY(VisibleAnywhere)
-	EItemState ItemState;
-
 	UFUNCTION()
 	FORCEINLINE bool GetWidgetVisibility()
 	{
@@ -71,6 +65,30 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	class USphereComponent* SphereComponent;
+
+	UPROPERTY(ReplicatedUsing= OnRep_ItemState, VisibleAnywhere)
+	EItemState ItemState;
+
+	UFUNCTION()
+	void OnRep_ItemState() const;
+	void InvalidateItemState() const;
+
+	UPROPERTY(EditAnywhere)
+	EItemType ItemType;
+
+public:
+	FORCEINLINE EItemType& GetItemType()
+	{
+		return ItemType;
+	}
+
+	void SetItemType(const EItemType Type)
+	{
+		this->ItemType = Type;
+	}
 	
+	void SetItemState(const EItemState ItemState);
+private:
 	virtual void ToggleVisibilityOfItemPickupWidget_Implementation(bool Visibility) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

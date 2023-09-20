@@ -61,7 +61,7 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 	ActionCombat = CreateDefaultSubobject<UActionCombat>(TEXT("Action"));
 	ActionCombat->SetIsReplicated(true);
-	
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -133,31 +133,17 @@ void ATP_ThirdPersonCharacter::Move(const FInputActionValue& Value)
 
 void ATP_ThirdPersonCharacter::Pick()
 {
-	if (OverlappedItemBase && OverlappedItemBase->GetWidgetVisibility())
+	if (ActionCombat)
 	{
-		switch (OverlappedItemBase->ItemType)
+		if (OverlappedItemBase && OverlappedItemBase->GetWidgetVisibility())
 		{
-		case EItemType::Weapon:
-			{
-				if (ActionCombat)
-				{
-					ActionCombat->EquippedWeapon(this, Cast<AWeaponBase>(OverlappedItemBase));
-				}
-			}
-		default:
-			{
-			}
+			ActionCombat->PickupItem(this, OverlappedItemBase);
 		}
-	}
-	else
-	{
-		FLogUtil::PrintString("Hidden");
 	}
 }
 
 void ATP_ThirdPersonCharacter::EquippedWeapon(ACharacter* Character, AWeaponBase* Weapon)
 {
-	FLogUtil::PrintString("Secondary Weapon Pick");
 }
 
 void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
@@ -183,7 +169,7 @@ void ATP_ThirdPersonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 void ATP_ThirdPersonCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	if(ActionCombat)
+	if (ActionCombat)
 	{
 		ActionCombat->OnEquipWeapon.AddDynamic(this, &ATP_ThirdPersonCharacter::EquippedWeapon);
 	}
@@ -286,7 +272,7 @@ bool ATP_ThirdPersonCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 		if (OutHitResult.bBlockingHit)
 		{
 			// If hit occurred, draw the line in green
-			// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
+			DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
 			return true;
 		}
 	}
