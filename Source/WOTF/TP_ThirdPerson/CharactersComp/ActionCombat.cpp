@@ -33,9 +33,7 @@ void UActionCombat::BeginPlay()
 void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UActionCombat, PrimaryWeapon);
-	DOREPLIFETIME(UActionCombat, MeleeWeapon);
-	DOREPLIFETIME(UActionCombat, ThrowableWeapons);
+	DOREPLIFETIME(UActionCombat, EquippedWeapon);
 }
 
 // Called every frame
@@ -59,14 +57,14 @@ void UActionCombat::EquipWeapon(ACharacter* Character, AWeaponBase* Weapon)
 	case EWeaponType::Primary: break;
 	case EWeaponType::Secondary:
 		{
-			SecondaryWeapon = Weapon;
-			SecondaryWeapon->SetItemState(EItemState::Equipped);
+			EquippedWeapon = Weapon;
+			EquippedWeapon->SetItemState(EItemState::Equipped);
 			if (const USkeletalMeshSocket* MeshSocket = Character->GetMesh()->GetSocketByName(
 				FName("hand_rSocket")))
 			{
 				MeshSocket->AttachActor(Weapon, Character->GetMesh());
 			}
-			SecondaryWeapon->SetOwner(Character);
+			EquippedWeapon->SetOwner(Character);
 			OnEquipWeapon.Broadcast(Character, Weapon);
 			break;
 		}

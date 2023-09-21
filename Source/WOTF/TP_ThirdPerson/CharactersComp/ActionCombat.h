@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "WOTF/Items/Weapons/EWeaponType.h"
+#include "WOTF/Items/Weapons/WeaponBase.h"
 #include "ActionCombat.generated.h"
 class AItemBase;
 class AWeaponBase;
@@ -29,23 +31,28 @@ public:
 
 private:
 	UPROPERTY(Replicated, VisibleAnywhere)
-	AWeaponBase* PrimaryWeapon;
-	UPROPERTY(VisibleAnywhere)
-	AWeaponBase* SecondaryWeapon;
-	UPROPERTY(Replicated, VisibleAnywhere)
-	AWeaponBase* MeleeWeapon;
-	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<AWeaponBase*> ThrowableWeapons;
-
-	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
-	FOnEquippedWeapon OnEquipWeapon;
-
+	AWeaponBase* EquippedWeapon;
+	
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	void EquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 public:
+	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
+	FOnEquippedWeapon OnEquipWeapon;
+
 	UFUNCTION()
 	void PickupItem(ACharacter* Character, AItemBase* Weapon);
-	friend class ATP_ThirdPersonCharacter;
+	FORCEINLINE bool IsPrimaryWeaponEquipped() const
+	{
+		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Primary;
+	}
+	FORCEINLINE bool IsSecondaryWeaponEquipped() const
+	{
+		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Secondary;
+	}
+	FORCEINLINE bool IsMeleeWeaponEquipped() const
+	{
+		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Melee;
+	}
 };

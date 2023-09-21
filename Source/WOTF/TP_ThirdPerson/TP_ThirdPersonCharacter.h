@@ -55,7 +55,13 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	
 	UPROPERTY(Category="Action Combat", VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	class UActionCombat* ActionCombat;
+
 public:
+	FORCEINLINE UActionCombat*& GetActionCombat()
+	{
+		return ActionCombat;
+	}
+
 	ATP_ThirdPersonCharacter();
 	virtual void Tick(float DeltaSeconds) override;
 protected:
