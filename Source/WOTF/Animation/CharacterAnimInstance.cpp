@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "WOTF/TP_ThirdPerson/TP_ThirdPersonCharacter.h"
 #include "WOTF/TP_ThirdPerson/CharactersComp/ActionCombat.h"
+#include "WOTF/utils/FLogUtil.h"
 
 void UCharacterAnimInstance::NativeInitializeAnimation()
 {
@@ -25,4 +26,6 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	IsPrimaryWeaponEquip = Character->GetActionCombat()->IsPrimaryWeaponEquipped();
 	IsSecondaryWeaponEquip = Character->GetActionCombat()->IsSecondaryWeaponEquipped();
 	IsMeleeWeaponEquip = Character->GetActionCombat()->IsMeleeWeaponEquipped();
+	IsCrouched = Character->bIsCrouched;
+	IsAiming = Character->GetActionCombat()->GetIsAiming();
 }

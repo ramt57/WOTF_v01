@@ -41,6 +41,14 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PickAction;
 
+	/** Crouch Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* CrouchAction;
+
+	/** Aiming Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AimingAction;
+
 	/* Line Trace Under Crosshairs*/
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
 
@@ -73,7 +81,8 @@ protected:
 	
 	/** Called for pick input */
 	void Pick();
-	
+	void CrouchPressed();
+	void AimingPressed();
 	UFUNCTION()
 	void EquippedWeapon(ACharacter* Character, class AWeaponBase* Weapon);
 

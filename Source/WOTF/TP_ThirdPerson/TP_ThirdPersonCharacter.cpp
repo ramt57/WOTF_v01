@@ -12,7 +12,6 @@
 #include "CharactersComp/ActionCombat.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "WOTF/Items/EItemState.h"
 #include "WOTF/Items/ItemBase.h"
 #include "WOTF/Items/ItemInterface.h"
 #include "WOTF/Items/Weapons/WeaponBase.h"
@@ -29,7 +28,8 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 	bReplicates = true;
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -105,6 +105,12 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 
 		// Picking
 		EnhancedInputComponent->BindAction(PickAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Pick);
+
+		//Crouch
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::CrouchPressed);
+
+		// Aiming
+		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::AimingPressed);
 	}
 }
 
@@ -138,6 +144,34 @@ void ATP_ThirdPersonCharacter::Pick()
 		if (OverlappedItemBase && OverlappedItemBase->GetWidgetVisibility())
 		{
 			ActionCombat->PickupItem(this, OverlappedItemBase);
+		}
+	}
+}
+
+void ATP_ThirdPersonCharacter::CrouchPressed()
+{
+	if(!GetCharacterMovement()->IsFalling())
+	{
+		if(bIsCrouched)
+		{
+			UnCrouch();	
+		}else
+		{
+			Crouch();
+		}
+	}
+}
+
+void ATP_ThirdPersonCharacter::AimingPressed()
+{
+	if(ActionCombat)
+	{
+		if(ActionCombat->GetIsAiming())
+		{
+			ActionCombat->SetAiming(false);
+		}else
+		{
+			ActionCombat->SetAiming(true);
 		}
 	}
 }

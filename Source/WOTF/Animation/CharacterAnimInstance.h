@@ -33,6 +33,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement Data")
 	bool IsFalling;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement Data")
+	bool IsCrouched;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat Movement")
+	bool IsAiming;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon Equip Data")
 	bool IsPrimaryWeaponEquip;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon Equip Data")
