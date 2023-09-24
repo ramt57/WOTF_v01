@@ -65,6 +65,11 @@ void UActionCombat::OnRep_IsAiming() const
 	if (EquippedWeapon)
 	{
 		ToggleControllerRotationYawOnAiming();
+		const auto Character = Cast<ACharacter>(GetOwner());
+		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = IsAiming
+																	  ? AimMaxWalkCrouchSpeed
+																	  : BaseMaxWalkCrouchSpeed;
+		Character->GetCharacterMovement()->MaxWalkSpeed = IsAiming ? AimMaxWalkSpeed : BaseMaxWalkSpeed;
 	}
 }
 

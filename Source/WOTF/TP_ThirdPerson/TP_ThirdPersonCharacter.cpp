@@ -96,6 +96,7 @@ void ATP_ThirdPersonCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	StartLineTraceForItems();
+	CalculateAimOffset(DeltaSeconds);
 }
 
 void ATP_ThirdPersonCharacter::BeginPlay()
