@@ -32,14 +32,19 @@ public:
 private:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	AWeaponBase* EquippedWeapon;
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(ReplicatedUsing=OnRep_IsAiming, VisibleAnywhere)
 	bool IsAiming;
-
+	void ToggleControllerRotationYawOnAiming() const;
+	UFUNCTION()
+	void OnRep_IsAiming() const;
+	UPROPERTY(Replicated)
+	FRotator DefaultMeshRotator;
 public:
 	void CheckAndSetAiming(bool bIsAiming);
 	void SetAiming(const bool bIsAiming);
 	UFUNCTION(Server, Unreliable)
 	void ServerSetAiming(const bool bIsAiming);
+
 private:
 	float BaseMaxWalkSpeed;
 	float BaseMaxWalkCrouchSpeed;
@@ -52,6 +57,7 @@ private:
 	void ServerEquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	void EquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
 	FOnEquippedWeapon OnEquipWeapon;
@@ -62,16 +68,23 @@ public:
 	{
 		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Primary;
 	}
+
 	FORCEINLINE bool IsSecondaryWeaponEquipped() const
 	{
 		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Secondary;
 	}
+
 	FORCEINLINE bool IsMeleeWeaponEquipped() const
 	{
 		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Melee;
 	}
+
 	FORCEINLINE bool GetIsAiming() const
 	{
 		return IsAiming;
+	}
+	FORCEINLINE AWeaponBase* GetEquipWeapon() const
+	{
+		return EquippedWeapon;
 	}
 };

@@ -63,8 +63,28 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	
 	UPROPERTY(Category="Action Combat", VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	class UActionCombat* ActionCombat;
-
 public:
+	FORCEINLINE float& GetAO_Yaw()
+	{
+		return AO_Yaw;
+	}
+
+	FORCEINLINE float& GetAO_Pitch()
+	{
+		return AO_Pitch;
+	}
+
+private:
+	UPROPERTY()
+	float AO_Yaw;
+	
+	UPROPERTY()
+	float AO_Pitch;
+	void CalculateAimOffset(float DeltaSeconds);
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ZoomCameraFov = 60.f;
+	float DefaultCameraFov;
 	FORCEINLINE UActionCombat*& GetActionCombat()
 	{
 		return ActionCombat;

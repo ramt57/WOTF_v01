@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "CharactersComp/ActionCombat.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "WOTF/Items/ItemBase.h"
 #include "WOTF/Items/ItemInterface.h"
@@ -21,6 +22,30 @@
 //////////////////////////////////////////////////////////////////////////
 // ATP_ThirdPersonCharacter
 
+
+void ATP_ThirdPersonCharacter::CalculateAimOffset(float DeltaSeconds)
+{
+	if (GetCharacterMovement()->IsMovingOnGround() && GetCharacterMovement()->Velocity.Size2D() > 3.0f)
+	{
+		FRotator StartingAimRotator = FRotator(0, GetActorRotation().Yaw, 0);
+		FRotator CurrentAimRotator = FRotator(0, GetBaseAimRotation().Yaw, 0);
+		FRotator DeltaAimRotator =
+			UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotator, StartingAimRotator);
+		AO_Yaw = DeltaAimRotator.Yaw;
+	}
+	else
+	{
+		AO_Yaw = 0.f;
+	}
+	AO_Pitch = GetBaseAimRotation().Pitch;
+	if (AO_Pitch > 90.f && !IsLocallyControlled())
+	{
+		FVector2D InRange(270.f, 360.f);
+		FVector2D OutRange(-90.f, 0.f);
+		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+	}
+	// FLogUtil::Warning(FString::Printf(TEXT("Yaw Rotation %f & Pitch Rotation %f"), AO_Yaw, AO_Pitch));
+}
 
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 {
@@ -77,6 +102,7 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+	DefaultCameraFov = GetFollowCamera()->FieldOfView;
 	//Add Input Mapping Context
 	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -107,10 +133,12 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		EnhancedInputComponent->BindAction(PickAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::Pick);
 
 		//Crouch
-		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::CrouchPressed);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this,
+		                                   &ATP_ThirdPersonCharacter::CrouchPressed);
 
 		// Aiming
-		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Triggered, this, &ATP_ThirdPersonCharacter::AimingPressed);
+		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Triggered, this,
+		                                   &ATP_ThirdPersonCharacter::AimingPressed);
 	}
 }
 
@@ -150,12 +178,13 @@ void ATP_ThirdPersonCharacter::Pick()
 
 void ATP_ThirdPersonCharacter::CrouchPressed()
 {
-	if(!GetCharacterMovement()->IsFalling())
+	if (!GetCharacterMovement()->IsFalling())
 	{
-		if(bIsCrouched)
+		if (bIsCrouched)
 		{
-			UnCrouch();	
-		}else
+			UnCrouch();
+		}
+		else
 		{
 			Crouch();
 		}
@@ -164,13 +193,22 @@ void ATP_ThirdPersonCharacter::CrouchPressed()
 
 void ATP_ThirdPersonCharacter::AimingPressed()
 {
-	if(ActionCombat)
+	if (ActionCombat)
 	{
-		if(ActionCombat->GetIsAiming())
+		if (ActionCombat->GetIsAiming())
 		{
+			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->WeaponType != EWeaponType::Melee)
+			{
+				FollowCamera->SetFieldOfView(DefaultCameraFov);
+			}
 			ActionCombat->SetAiming(false);
-		}else
+		}
+		else
 		{
+			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->WeaponType != EWeaponType::Melee)
+			{
+				FollowCamera->SetFieldOfView(ZoomCameraFov);
+			}
 			ActionCombat->SetAiming(true);
 		}
 	}
@@ -239,7 +277,7 @@ void ATP_ThirdPersonCharacter::StartLineTraceForItems()
 			}
 			else
 			{
-				if (!ensure(LastHitItemBase == nullptr))
+				if (LastHitItemBase != nullptr)
 				{
 					IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
 					LastHitItemBase = nullptr;
@@ -248,7 +286,7 @@ void ATP_ThirdPersonCharacter::StartLineTraceForItems()
 		}
 		else
 		{
-			if (!ensure(LastHitItemBase == nullptr))
+			if (LastHitItemBase != nullptr)
 			{
 				IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
 				LastHitItemBase = nullptr;
@@ -257,7 +295,7 @@ void ATP_ThirdPersonCharacter::StartLineTraceForItems()
 	}
 	else
 	{
-		if (!ensure(LastHitItemBase == nullptr))
+		if (LastHitItemBase != nullptr)
 		{
 			IItemInterface::Execute_ToggleVisibilityOfItemPickupWidget(LastHitItemBase, false);
 			LastHitItemBase = nullptr;
@@ -306,7 +344,7 @@ bool ATP_ThirdPersonCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 		if (OutHitResult.bBlockingHit)
 		{
 			// If hit occurred, draw the line in green
-			DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
+			// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
 			return true;
 		}
 	}

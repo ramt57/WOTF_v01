@@ -25,6 +25,7 @@ void UActionCombat::BeginPlay()
 	Super::BeginPlay();
 	if (const auto Character = Cast<ACharacter>(GetOwner()))
 	{
+		DefaultMeshRotator = Character->GetMesh()->GetRelativeRotation();
 		BaseMaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
 		BaseMaxWalkCrouchSpeed = Character->GetCharacterMovement()->MaxWalkSpeedCrouched;
 	}
@@ -35,6 +36,7 @@ void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UActionCombat, EquippedWeapon);
 	DOREPLIFETIME(UActionCombat, IsAiming);
+	DOREPLIFETIME(UActionCombat, DefaultMeshRotator);
 }
 
 // Called every frame
@@ -50,12 +52,32 @@ void UActionCombat::ServerEquipWeapon_Implementation(ACharacter* Character, AWea
 	EquipWeapon(Character, Weapon);
 }
 
+void UActionCombat::ToggleControllerRotationYawOnAiming() const
+{
+	if (const auto Character = Cast<ACharacter>(GetOwner()))
+	{
+		Character->bUseControllerRotationYaw = IsAiming ? true : false;
+	}
+}
+
+void UActionCombat::OnRep_IsAiming() const
+{
+	if (EquippedWeapon)
+	{
+		ToggleControllerRotationYawOnAiming();
+	}
+}
+
 void UActionCombat::CheckAndSetAiming(const bool bIsAiming)
 {
 	if (EquippedWeapon)
 	{
 		IsAiming = bIsAiming;
 		const auto Character = Cast<ACharacter>(GetOwner());
+		ToggleControllerRotationYawOnAiming();
+		Character->GetMesh()->SetRelativeRotation(IsAiming
+			                                          ? FRotator(0, DefaultMeshRotator.Yaw + 20.f, 0)
+			                                          : DefaultMeshRotator);
 		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = IsAiming
 			                                                          ? AimMaxWalkCrouchSpeed
 			                                                          : BaseMaxWalkCrouchSpeed;

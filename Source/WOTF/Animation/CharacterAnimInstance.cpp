@@ -18,7 +18,7 @@ void UCharacterAnimInstance::NativeInitializeAnimation()
 void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
-	if(Character == nullptr) return;
+	if (Character == nullptr) return;
 	Velocity = Character->GetCharacterMovement()->Velocity;
 	GroundSpeed = Velocity.Size2D();
 	IsFalling = Character->GetCharacterMovement()->IsFalling();
@@ -28,4 +28,6 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	IsMeleeWeaponEquip = Character->GetActionCombat()->IsMeleeWeaponEquipped();
 	IsCrouched = Character->bIsCrouched;
 	IsAiming = Character->GetActionCombat()->GetIsAiming();
+	AO_Yaw = Character->GetAO_Yaw();
+	AO_Pitch = Character->GetAO_Pitch();
 }

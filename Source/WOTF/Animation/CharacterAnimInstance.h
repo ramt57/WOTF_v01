@@ -15,6 +15,7 @@ class WOTF_API UCharacterAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 public:
 	virtual void NativeInitializeAnimation() override;
+	
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Refrences", meta = (AllowPrivateAccess = "true"))
@@ -45,4 +46,10 @@ public:
 	bool IsSecondaryWeaponEquip;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon Equip Data")
 	bool IsMeleeWeaponEquip;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aim Offset")
+	float AO_Yaw;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Aim Offset")
+	float AO_Pitch;
 };
