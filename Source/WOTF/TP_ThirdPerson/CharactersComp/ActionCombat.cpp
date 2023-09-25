@@ -25,6 +25,7 @@ void UActionCombat::BeginPlay()
 	Super::BeginPlay();
 	if (const auto Character = Cast<ACharacter>(GetOwner()))
 	{
+		CharacterAnimInstance = Character->GetMesh()->GetAnimInstance();
 		DefaultMeshRotator = Character->GetMesh()->GetRelativeRotation();
 		BaseMaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
 		BaseMaxWalkCrouchSpeed = Character->GetCharacterMovement()->MaxWalkSpeedCrouched;
@@ -39,6 +40,31 @@ void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(UActionCombat, DefaultMeshRotator);
 }
 
+void UActionCombat::FireButtonPressed(const bool IsPressed)
+{
+	if (IsPressed)
+	{
+		PlayFireAnimMontage(false);
+	}
+	else
+	{
+		FLogUtil::PrintString("Firing Released");
+	}
+}
+void UActionCombat::PlayFireAnimMontage(const bool bIsAutoFireEnable) const
+{
+	if (EquippedWeapon != nullptr)
+	{
+		if(CharacterAnimInstance &&  FireWeaponAnimMontage)
+		{
+			FLogUtil::PrintString("Firing Pressed");
+			CharacterAnimInstance->Montage_Play(FireWeaponAnimMontage);
+			const FName SectionName = bIsAutoFireEnable ? FName("Stand_Fire_Continous"): FName("Stand_Fire_Single");
+			CharacterAnimInstance->Montage_JumpToSection(SectionName);
+			EquippedWeapon->PlayFireAnimation();
+		}
+	}
+}
 // Called every frame
 void UActionCombat::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -67,8 +93,8 @@ void UActionCombat::OnRep_IsAiming() const
 		ToggleControllerRotationYawOnAiming();
 		const auto Character = Cast<ACharacter>(GetOwner());
 		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = IsAiming
-																	  ? AimMaxWalkCrouchSpeed
-																	  : BaseMaxWalkCrouchSpeed;
+			                                                          ? AimMaxWalkCrouchSpeed
+			                                                          : BaseMaxWalkCrouchSpeed;
 		Character->GetCharacterMovement()->MaxWalkSpeed = IsAiming ? AimMaxWalkSpeed : BaseMaxWalkSpeed;
 	}
 }

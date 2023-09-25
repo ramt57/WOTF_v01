@@ -49,6 +49,10 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimingAction;
 
+	/** Firing Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* FiringAction;
+
 	/* Line Trace Under Crosshairs*/
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
 
@@ -60,9 +64,10 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	AActor* LastHitItemBase;
 	void StartLineTraceForItems();
 	virtual void SetOverlappedItemBase_Implementation(AItemBase* ItemBase) override;
-	
+
 	UPROPERTY(Category="Action Combat", VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	class UActionCombat* ActionCombat;
+
 public:
 	FORCEINLINE float& GetAO_Yaw()
 	{
@@ -77,10 +82,12 @@ public:
 private:
 	UPROPERTY()
 	float AO_Yaw;
-	
+
 	UPROPERTY()
 	float AO_Pitch;
 	void CalculateAimOffset(float DeltaSeconds);
+	UPROPERTY()
+	UAnimInstance* AnimInstance;
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ZoomCameraFov = 60.f;
@@ -92,23 +99,26 @@ public:
 
 	ATP_ThirdPersonCharacter();
 	virtual void Tick(float DeltaSeconds) override;
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-	
+
 	/** Called for pick input */
 	void Pick();
 	void CrouchPressed();
 	void AimingPressed();
+	void FirePressed();
+	void FireReleased();
 	UFUNCTION()
 	void EquippedWeapon(ACharacter* Character, class AWeaponBase* Weapon);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
-protected:
+	
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 

@@ -103,6 +103,7 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+	AnimInstance = GetMesh()->GetAnimInstance();
 	DefaultCameraFov = GetFollowCamera()->FieldOfView;
 	//Add Input Mapping Context
 	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
@@ -114,6 +115,8 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 		}
 	}
 }
+
+
 
 void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -140,6 +143,13 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		// Aiming
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Triggered, this,
 		                                   &ATP_ThirdPersonCharacter::AimingPressed);
+		// Firing Triggered
+		EnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Started, this,
+		                                   &ATP_ThirdPersonCharacter::FirePressed);
+
+		// Firing Released
+		EnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Completed, this,
+		                                   &ATP_ThirdPersonCharacter::FireReleased);
 	}
 }
 
@@ -212,6 +222,22 @@ void ATP_ThirdPersonCharacter::AimingPressed()
 			}
 			ActionCombat->SetAiming(true);
 		}
+	}
+}
+
+void ATP_ThirdPersonCharacter::FirePressed()
+{
+	if (ActionCombat && ActionCombat->GetIsAiming())
+	{
+		ActionCombat->FireButtonPressed(true);
+	}
+}
+
+void ATP_ThirdPersonCharacter::FireReleased()
+{
+	if (ActionCombat)
+	{
+		ActionCombat->FireButtonPressed(false);
 	}
 }
 

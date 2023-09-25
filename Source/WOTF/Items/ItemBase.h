@@ -60,6 +60,13 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* SkeletalMesh;
 
+public:
+	FORCEINLINE USkeletalMeshComponent* GetSkeletalMesh() const
+	{
+		return SkeletalMesh;
+	}
+
+private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	class UWidgetComponent* WidgetComponent;
 

@@ -9,3 +9,8 @@ AWeaponBase::AWeaponBase()
 {
 
 }
+
+void AWeaponBase::PlayFireAnimation() const
+{
+	GetSkeletalMesh()->PlayAnimation(FireAnimAssets, false);
+}

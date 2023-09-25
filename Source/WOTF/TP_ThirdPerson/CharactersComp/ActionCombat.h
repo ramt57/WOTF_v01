@@ -23,8 +23,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
-public:
+	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
@@ -39,13 +38,10 @@ private:
 	void OnRep_IsAiming() const;
 	UPROPERTY(Replicated)
 	FRotator DefaultMeshRotator;
-public:
-	void CheckAndSetAiming(bool bIsAiming);
-	void SetAiming(const bool bIsAiming);
 	UFUNCTION(Server, Unreliable)
 	void ServerSetAiming(const bool bIsAiming);
+	void CheckAndSetAiming(bool bIsAiming);
 
-private:
 	float BaseMaxWalkSpeed;
 	float BaseMaxWalkCrouchSpeed;
 	UPROPERTY(EditAnywhere)
@@ -57,8 +53,15 @@ private:
 	void ServerEquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	void EquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
+	UPROPERTY()
+	UAnimInstance* CharacterAnimInstance;
+	UPROPERTY(EditAnywhere, Category=Combat)
+	UAnimMontage* FireWeaponAnimMontage;
+	void PlayFireAnimMontage(bool bIsAutoFireEnable) const;
 public:
+	void FireButtonPressed(bool IsPressed);
+	void SetAiming(const bool bIsAiming);
 	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
 	FOnEquippedWeapon OnEquipWeapon;
 
