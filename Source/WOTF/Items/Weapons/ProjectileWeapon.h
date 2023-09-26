@@ -6,6 +6,8 @@
 #include "WeaponBase.h"
 #include "ProjectileWeapon.generated.h"
 
+class AProjectile;
+
 UCLASS()
 class WOTF_API AProjectileWeapon : public AWeaponBase
 {
@@ -22,4 +24,7 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void Fire(const FVector& HitVector) override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AProjectile> Projectile;
 };

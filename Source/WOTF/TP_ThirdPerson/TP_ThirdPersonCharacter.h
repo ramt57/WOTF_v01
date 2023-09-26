@@ -52,10 +52,7 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	/** Firing Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* FiringAction;
-
-	/* Line Trace Under Crosshairs*/
-	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
-
+	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappedItemBase)
 	class AItemBase* OverlappedItemBase;
 	UFUNCTION()

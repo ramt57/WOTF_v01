@@ -14,13 +14,13 @@ UCLASS()
 class WOTF_API AWeaponBase : public AItemBase
 {
 	GENERATED_BODY()
-private:
-	
 public:
 	AWeaponBase();
 	UPROPERTY(EditAnywhere, Category="Weapon Properties")
 	UAnimationAsset* FireAnimAssets;
 	UPROPERTY(EditDefaultsOnly)
 	EWeaponType WeaponType;
+	virtual void Fire(const FVector& Vector);
+private:
 	void PlayFireAnimation() const;
 };

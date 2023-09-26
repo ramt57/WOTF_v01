@@ -23,7 +23,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
+
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
@@ -53,13 +53,19 @@ private:
 	void ServerEquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	void EquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
+
 	UPROPERTY()
 	UAnimInstance* CharacterAnimInstance;
 	UPROPERTY(EditAnywhere, Category=Combat)
 	UAnimMontage* FireWeaponAnimMontage;
-	void PlayFireAnimMontage(bool bIsAutoFireEnable) const;
+	UFUNCTION(Server, Reliable)
+	void ServerFire(const FVector_NetQuantize& HitTarget);
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCast_Fire(const FVector_NetQuantize& HitTarget);
+	bool IsLocallyControlled = false;
 public:
+	/* Line Trace Under Crosshairs*/
+	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
 	void FireButtonPressed(bool IsPressed);
 	void SetAiming(const bool bIsAiming);
 	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
@@ -86,6 +92,7 @@ public:
 	{
 		return IsAiming;
 	}
+
 	FORCEINLINE AWeaponBase* GetEquipWeapon() const
 	{
 		return EquippedWeapon;

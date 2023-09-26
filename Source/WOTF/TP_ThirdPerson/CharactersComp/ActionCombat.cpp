@@ -6,6 +6,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "WOTF/Items/EItemState.h"
 #include "WOTF/Items/Weapons/EWeaponType.h"
@@ -18,13 +19,13 @@ UActionCombat::UActionCombat()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-
 // Called when the game starts
 void UActionCombat::BeginPlay()
 {
 	Super::BeginPlay();
 	if (const auto Character = Cast<ACharacter>(GetOwner()))
 	{
+		IsLocallyControlled = Character->IsLocallyControlled() ? true : false;
 		CharacterAnimInstance = Character->GetMesh()->GetAnimInstance();
 		DefaultMeshRotator = Character->GetMesh()->GetRelativeRotation();
 		BaseMaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
@@ -40,37 +41,77 @@ void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(UActionCombat, DefaultMeshRotator);
 }
 
+void UActionCombat::MultiCast_Fire_Implementation(const FVector_NetQuantize& HitTarget)
+{
+	if (EquippedWeapon != nullptr)
+	{
+		if (CharacterAnimInstance && FireWeaponAnimMontage)
+		{
+			EquippedWeapon->Fire(HitTarget);
+			CharacterAnimInstance->Montage_Play(FireWeaponAnimMontage);
+			const FName SectionName = FName("Stand_Fire_Single");
+			CharacterAnimInstance->Montage_JumpToSection(SectionName);
+		}
+	}
+}
+
+bool UActionCombat::TraceUnderCrosshairs(FHitResult& OutHitResult)
+{
+	/* Get ViewPort Size */
+	FVector2D ViewPortSize;
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewPortSize);
+	}
+
+	/* Get Screen space location of cross hairs which is usually a center of screen for most of the games*/
+	const FVector2D CrosshairLocation(ViewPortSize.X / 2.f, ViewPortSize.Y / 2.f);
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+
+	/* Get World position and direction of cross hairs */
+	if (UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
+	                                             CrosshairLocation,
+	                                             CrosshairWorldPosition,
+	                                             CrosshairWorldDirection))
+	{
+		/* Trace from cross hairs world location outward */
+		const FVector Start = {CrosshairWorldPosition};
+		const FVector End = {Start + CrosshairWorldDirection * 50000.f};
+		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, ECC_Visibility);
+		if (!OutHitResult.bBlockingHit)
+		{
+			OutHitResult.ImpactPoint = End;
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
 void UActionCombat::FireButtonPressed(const bool IsPressed)
 {
-	if (IsPressed)
+	if (IsPressed && IsLocallyControlled)
 	{
-		PlayFireAnimMontage(false);
+		FHitResult OutHitResult;
+		TraceUnderCrosshairs(OutHitResult);
+		ServerFire(OutHitResult.ImpactPoint);
 	}
 	else
 	{
 		FLogUtil::PrintString("Firing Released");
 	}
 }
-void UActionCombat::PlayFireAnimMontage(const bool bIsAutoFireEnable) const
+
+void UActionCombat::ServerFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
-	if (EquippedWeapon != nullptr)
-	{
-		if(CharacterAnimInstance &&  FireWeaponAnimMontage)
-		{
-			FLogUtil::PrintString("Firing Pressed");
-			CharacterAnimInstance->Montage_Play(FireWeaponAnimMontage);
-			const FName SectionName = bIsAutoFireEnable ? FName("Stand_Fire_Continous"): FName("Stand_Fire_Single");
-			CharacterAnimInstance->Montage_JumpToSection(SectionName);
-			EquippedWeapon->PlayFireAnimation();
-		}
-	}
+	MultiCast_Fire(HitTarget);
 }
+
 // Called every frame
 void UActionCombat::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
 void UActionCombat::ServerEquipWeapon_Implementation(ACharacter* Character, AWeaponBase* Weapon)
@@ -181,7 +222,6 @@ void UActionCombat::PickupItem(ACharacter* Character, AItemBase* Item)
 				{
 					ServerEquipWeapon(Character, Cast<AWeaponBase>(Item));
 				}
-
 				break;
 			}
 		case EItemType::Aid: break;

@@ -276,10 +276,10 @@ void ATP_ThirdPersonCharacter::PostInitializeComponents()
 
 void ATP_ThirdPersonCharacter::StartLineTraceForItems()
 {
-	if (OverlappedItemBase && OverlappedItemBase->bCharacterCanStartLineTrace)
+	if (ActionCombat && OverlappedItemBase && OverlappedItemBase->bCharacterCanStartLineTrace)
 	{
 		FHitResult OutHitResult;
-		TraceUnderCrosshairs(OutHitResult);
+		ActionCombat->TraceUnderCrosshairs(OutHitResult);
 		if (OutHitResult.bBlockingHit)
 		{
 			if (OutHitResult.GetActor()->GetClass()->ImplementsInterface(UItemInterface::StaticClass()))
@@ -342,40 +342,6 @@ void ATP_ThirdPersonCharacter::SetOverlappedItemBase_Implementation(AItemBase* I
 	{
 		OverlappedItemBase->bCharacterCanStartLineTrace = true;
 	}
-}
-
-bool ATP_ThirdPersonCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
-{
-	/* Get ViewPort Size */
-	FVector2D ViewPortSize;
-	if (GEngine && GEngine->GameViewport)
-	{
-		GEngine->GameViewport->GetViewportSize(ViewPortSize);
-	}
-
-	/* Get Screen space location of cross hairs which is usually a center of screen for most of the games*/
-	const FVector2D CrosshairLocation(ViewPortSize.X / 2.f, ViewPortSize.Y / 2.f);
-	FVector CrosshairWorldPosition;
-	FVector CrosshairWorldDirection;
-
-	/* Get World position and direction of cross hairs */
-	if (UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
-	                                             CrosshairLocation,
-	                                             CrosshairWorldPosition,
-	                                             CrosshairWorldDirection))
-	{
-		/* Trace from cross hairs world location outward */
-		const FVector Start = {CrosshairWorldPosition};
-		const FVector End = {Start + CrosshairWorldDirection * 50000.f};
-		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, ECC_Visibility);
-		if (OutHitResult.bBlockingHit)
-		{
-			// If hit occurred, draw the line in green
-			// DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
-			return true;
-		}
-	}
-	return false;
 }
 
 void ATP_ThirdPersonCharacter::OnRep_OverlappedItemBase(AItemBase* PrevValue) const
