@@ -75,17 +75,17 @@ public:
 	void PickupItem(ACharacter* Character, AItemBase* Weapon);
 	FORCEINLINE bool IsPrimaryWeaponEquipped() const
 	{
-		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Primary;
+		return EquippedWeapon && EquippedWeapon->GetWeaponData().WeaponType == EWeaponType::Primary;
 	}
 
 	FORCEINLINE bool IsSecondaryWeaponEquipped() const
 	{
-		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Secondary;
+		return EquippedWeapon && EquippedWeapon->GetWeaponData().WeaponType == EWeaponType::Secondary;
 	}
 
 	FORCEINLINE bool IsMeleeWeaponEquipped() const
 	{
-		return EquippedWeapon && EquippedWeapon->WeaponType == EWeaponType::Melee;
+		return EquippedWeapon && EquippedWeapon->GetWeaponData().WeaponType == EWeaponType::Melee;
 	}
 
 	FORCEINLINE bool GetIsAiming() const

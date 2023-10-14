@@ -14,7 +14,7 @@ class WOTF_API AWOTFHudBase : public AHUD
 public:
 	// Sets default values for this actor's properties
 	AWOTFHudBase();
-
+	virtual void DrawHUD() override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

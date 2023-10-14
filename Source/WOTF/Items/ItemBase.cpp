@@ -16,14 +16,17 @@ AItemBase::AItemBase()
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 
-	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ItemMesh"));
-	SetRootComponent(SkeletalMesh);
-	SkeletalMesh->SetCollisionResponseToAllChannels(ECR_Block);
-	SkeletalMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	SkeletalMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
+	SetRootComponent(StaticMeshComponent);
+	StaticMeshComponent->SetCollisionResponseToAllChannels(ECR_Block);
+	StaticMeshComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Skeletal Mesh"));
+	SkeletalMeshComponent->SetupAttachment(StaticMeshComponent);
+	
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
-	CollisionBox->SetupAttachment(SkeletalMesh);
+	CollisionBox->SetupAttachment(StaticMeshComponent);
 	CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
@@ -89,6 +92,7 @@ void AItemBase::InvalidateItemState() const
 			/* Enable Collision */
 			SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			break;
 		}
 	case EItemState::Equipped:
 		{
@@ -96,9 +100,11 @@ void AItemBase::InvalidateItemState() const
 			/* Ignore & Disable collision for all channel */
 			SphereComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			break;
 		}
 	case EItemState::Dropped:
 		{
+			break;
 		}
 	case EItemState::Pickup: break;
 	case EItemState::AddedToInventory: break;

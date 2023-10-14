@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "../ItemBase.h"
+#include "FItemWeapon.h"
 #include "WeaponBase.generated.h"
 
+class UItemWeaponDataTable;
 enum class EWeaponType : uint8;
 /**
  * 
@@ -16,11 +18,16 @@ class WOTF_API AWeaponBase : public AItemBase
 	GENERATED_BODY()
 public:
 	AWeaponBase();
-	UPROPERTY(EditAnywhere, Category="Weapon Properties")
-	UAnimationAsset* FireAnimAssets;
-	UPROPERTY(EditDefaultsOnly)
-	EWeaponType WeaponType;
-	virtual void Fire(const FVector& Vector);
+protected:
+	virtual void InvalidateItemState() const override;
 private:
+	UPROPERTY(EditDefaultsOnly, Category="Weapon Properties", meta=(AllowPrivateAccess="true"))
+	FItemWeapon WeaponData;
 	void PlayFireAnimation() const;
+public:
+	virtual void Fire(const FVector& Vector);
+	FItemWeapon& GetWeaponData()
+	{
+		return WeaponData;
+	}
 };

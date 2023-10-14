@@ -3,12 +3,42 @@
 
 #include "WeaponBase.h"
 
+#include "WOTF/DataTables/ItemWeaponDataTable.h"
 #include "WOTF/Items/EItemState.h"
-#include "WOTF/TP_ThirdPerson/TP_ThirdPersonCharacter.h"
 
 AWeaponBase::AWeaponBase()
 {
 	SetItemType(EItemType::Weapon);
+}
+
+void AWeaponBase::InvalidateItemState() const
+{
+	Super::InvalidateItemState();
+	switch (GetItemState())
+	{
+	case EItemState::Initial:
+		{
+			GetStaticMeshComponent()->SetVisibility(true);
+			GetSkeletonMeshComponent()->SetVisibility(false);
+			break;
+		}
+	case EItemState::Pickup: break;
+	case EItemState::Dropped:
+		{
+			GetStaticMeshComponent()->SetVisibility(true);
+			GetSkeletonMeshComponent()->SetVisibility(false);
+			break;
+		}
+	case EItemState::AddedToInventory: break;
+	case EItemState::Equipped:
+		{
+			GetStaticMeshComponent()->SetVisibility(false);
+			GetSkeletonMeshComponent()->SetVisibility(true);
+			break;
+		}
+	case EItemState::MaxCount: break;
+	default: ;
+	}
 }
 
 void AWeaponBase::Fire(const FVector& Vector)
@@ -18,5 +48,5 @@ void AWeaponBase::Fire(const FVector& Vector)
 
 void AWeaponBase::PlayFireAnimation() const
 {
-	GetSkeletalMesh()->PlayAnimation(FireAnimAssets, false);
+	GetSkeletonMeshComponent()->PlayAnimation(WeaponData.FireAnimAssets, false);
 }

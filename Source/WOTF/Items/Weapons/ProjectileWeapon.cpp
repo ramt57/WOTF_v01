@@ -26,22 +26,19 @@ void AProjectileWeapon::Tick(float DeltaTime)
 void AProjectileWeapon::Fire(const FVector& HitVector)
 {
 	Super::Fire(HitVector);
-	if(!HasAuthority()) return;
-	APawn* Pawn = Cast<APawn>(GetOwner());
-	if (const USkeletalMeshSocket* SkeletalMeshSocket = GetSkeletalMesh()->GetSocketByName(FName("AmmoSocket")))
+	if (!HasAuthority()) return;
+	APawn* Pawn = Cast<APawn>(GetOwner()); //TODO("Can be removed from here and optimised")
+	if (const USkeletalMeshSocket* SkeletalMeshSocket = GetSkeletonMeshComponent()->GetSocketByName(GetWeaponData().ProjectileSpawnSocket))
 	{
-		const FTransform SocketTransform = SkeletalMeshSocket->GetSocketTransform(GetSkeletalMesh());
+		const FTransform SocketTransform = SkeletalMeshSocket->GetSocketTransform(GetSkeletonMeshComponent());
 		const FVector ToTarget = HitVector - SocketTransform.GetLocation();
-		if (Projectile)
+		if (UWorld* World = GetWorld())
 		{
-			if (UWorld* World = GetWorld())
-			{
-				FActorSpawnParameters SpawnParameters;
-				SpawnParameters.Owner = GetOwner();
-				SpawnParameters.Instigator = Pawn;
-				World->SpawnActor<AProjectile>(Projectile, SocketTransform.GetLocation(), ToTarget.Rotation(),
-				                               SpawnParameters);
-			}
+			FActorSpawnParameters SpawnParameters;
+			SpawnParameters.Owner = GetOwner();
+			SpawnParameters.Instigator = Pawn;
+			World->SpawnActor<AProjectile>(GetWeaponData().Projectile, SocketTransform.GetLocation(), ToTarget.Rotation(),
+			                               SpawnParameters);
 		}
 	}
 }

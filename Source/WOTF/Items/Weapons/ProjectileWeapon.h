@@ -25,6 +25,4 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void Fire(const FVector& HitVector) override;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<AProjectile> Projectile;
 };

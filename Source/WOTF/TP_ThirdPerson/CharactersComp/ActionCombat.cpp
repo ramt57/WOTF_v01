@@ -147,9 +147,6 @@ void UActionCombat::CheckAndSetAiming(const bool bIsAiming)
 		IsAiming = bIsAiming;
 		const auto Character = Cast<ACharacter>(GetOwner());
 		ToggleControllerRotationYawOnAiming();
-		Character->GetMesh()->SetRelativeRotation(IsAiming
-			                                          ? FRotator(0, DefaultMeshRotator.Yaw + 20.f, 0)
-			                                          : DefaultMeshRotator);
 		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = IsAiming
 			                                                          ? AimMaxWalkCrouchSpeed
 			                                                          : BaseMaxWalkCrouchSpeed;
@@ -180,7 +177,7 @@ void UActionCombat::EquipWeapon(ACharacter* Character, AWeaponBase* Weapon)
 	EquippedWeapon->SetItemState(EItemState::Equipped);
 	EquippedWeapon->SetOwner(Character);
 	OnEquipWeapon.Broadcast(Character, Weapon);
-	switch (Weapon->WeaponType)
+	switch (Weapon->GetWeaponData().WeaponType)
 	{
 	case EWeaponType::Melee: break;
 	case EWeaponType::Primary:

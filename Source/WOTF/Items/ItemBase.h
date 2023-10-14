@@ -58,31 +58,37 @@ private:
 	class UBoxComponent* CollisionBox;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
-	USkeletalMeshComponent* SkeletalMesh;
+	UStaticMeshComponent* StaticMeshComponent;
 
 public:
-	FORCEINLINE USkeletalMeshComponent* GetSkeletalMesh() const
+	FORCEINLINE UStaticMeshComponent* GetStaticMeshComponent() const
 	{
-		return SkeletalMesh;
+		return StaticMeshComponent;
 	}
-
+	FORCEINLINE USkeletalMeshComponent* GetSkeletonMeshComponent() const
+	{
+		return SkeletalMeshComponent;
+	}
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	class UWidgetComponent* WidgetComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	class USphereComponent* SphereComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* SkeletalMeshComponent;
 
 	UPROPERTY(ReplicatedUsing= OnRep_ItemState, VisibleAnywhere)
 	EItemState ItemState;
 
 	UFUNCTION()
 	void OnRep_ItemState() const;
-	void InvalidateItemState() const;
-
-	UPROPERTY(EditAnywhere)
+	
+	UPROPERTY(VisibleAnywhere)
 	EItemType ItemType;
-
+protected:
+	virtual void InvalidateItemState() const;
 public:
 	FORCEINLINE EItemType& GetItemType()
 	{
@@ -95,6 +101,10 @@ public:
 	}
 	
 	void SetItemState(const EItemState ItemState);
+	FORCEINLINE EItemState GetItemState() const
+	{
+		return ItemState;
+	}
 private:
 	virtual void ToggleVisibilityOfItemPickupWidget_Implementation(bool Visibility) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

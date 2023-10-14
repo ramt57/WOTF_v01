@@ -10,7 +10,6 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "CharactersComp/ActionCombat.h"
-#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "WOTF/Items/ItemBase.h"
@@ -208,7 +207,7 @@ void ATP_ThirdPersonCharacter::AimingPressed()
 	{
 		if (ActionCombat->GetIsAiming())
 		{
-			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->WeaponType != EWeaponType::Melee)
+			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->GetWeaponData().WeaponType != EWeaponType::Melee)
 			{
 				FollowCamera->SetFieldOfView(DefaultCameraFov);
 			}
@@ -216,7 +215,7 @@ void ATP_ThirdPersonCharacter::AimingPressed()
 		}
 		else
 		{
-			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->WeaponType != EWeaponType::Melee)
+			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->GetWeaponData().WeaponType != EWeaponType::Melee)
 			{
 				FollowCamera->SetFieldOfView(ZoomCameraFov);
 			}
