@@ -86,9 +86,9 @@ private:
 	UPROPERTY()
 	UAnimInstance* AnimInstance;
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ZoomCameraFov = 60.f;
 	float DefaultCameraFov;
+	float CurrentCameraFov;
+	void InterpFOV(float DeltaTime);
 	FORCEINLINE UActionCombat*& GetActionCombat()
 	{
 		return ActionCombat;

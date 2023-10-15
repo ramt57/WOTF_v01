@@ -94,8 +94,12 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 void ATP_ThirdPersonCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	StartLineTraceForItems();
-	CalculateAimOffset(DeltaSeconds);
+	if (IsLocallyControlled())
+	{
+		StartLineTraceForItems();
+		CalculateAimOffset(DeltaSeconds);
+		InterpFOV(DeltaSeconds);
+	}
 }
 
 void ATP_ThirdPersonCharacter::BeginPlay()
@@ -104,6 +108,7 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 	Super::BeginPlay();
 	AnimInstance = GetMesh()->GetAnimInstance();
 	DefaultCameraFov = GetFollowCamera()->FieldOfView;
+	CurrentCameraFov = DefaultCameraFov;
 	//Add Input Mapping Context
 	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -114,7 +119,6 @@ void ATP_ThirdPersonCharacter::BeginPlay()
 		}
 	}
 }
-
 
 
 void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -201,24 +205,32 @@ void ATP_ThirdPersonCharacter::CrouchPressed()
 	}
 }
 
+void ATP_ThirdPersonCharacter::InterpFOV(float DeltaTime)
+{
+	if (ActionCombat->GetEquipWeapon() == nullptr) return;
+	const float ZoomedCameraFOV = ActionCombat->GetEquipWeapon()->GetWeaponData().ZoomedFOV;
+	const float ZoomInterpolationSpeed = ActionCombat->GetEquipWeapon()->GetWeaponData().ZoomInterpolationSpeed;
+	if (ActionCombat->GetIsAiming())
+	{
+		CurrentCameraFov = FMath::FInterpTo(CurrentCameraFov, ZoomedCameraFOV, DeltaTime, ZoomInterpolationSpeed);
+	}
+	else
+	{
+		CurrentCameraFov = FMath::FInterpTo(CurrentCameraFov, DefaultCameraFov, DeltaTime, ZoomInterpolationSpeed);
+	}
+	FollowCamera->SetFieldOfView(CurrentCameraFov);
+}
+
 void ATP_ThirdPersonCharacter::AimingPressed()
 {
 	if (ActionCombat)
 	{
 		if (ActionCombat->GetIsAiming())
 		{
-			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->GetWeaponData().WeaponType != EWeaponType::Melee)
-			{
-				FollowCamera->SetFieldOfView(DefaultCameraFov);
-			}
 			ActionCombat->SetAiming(false);
 		}
 		else
 		{
-			if (ActionCombat->GetEquipWeapon() && ActionCombat->GetEquipWeapon()->GetWeaponData().WeaponType != EWeaponType::Melee)
-			{
-				FollowCamera->SetFieldOfView(ZoomCameraFov);
-			}
 			ActionCombat->SetAiming(true);
 		}
 	}

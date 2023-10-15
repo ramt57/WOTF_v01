@@ -29,6 +29,7 @@ protected:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
+	FVector HitImpactPoint;
 	UPROPERTY(Replicated, VisibleAnywhere)
 	AWeaponBase* EquippedWeapon;
 	UPROPERTY(ReplicatedUsing=OnRep_IsAiming, VisibleAnywhere)
@@ -51,6 +52,7 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
+	void DebugLineThroughMuzzle();
 	void EquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

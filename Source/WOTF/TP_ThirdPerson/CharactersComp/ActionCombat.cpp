@@ -112,6 +112,10 @@ void UActionCombat::ServerFire_Implementation(const FVector_NetQuantize& HitTarg
 void UActionCombat::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	FHitResult HitResult;
+	TraceUnderCrosshairs(HitResult);
+	HitImpactPoint = HitResult.ImpactPoint;
+	DebugLineThroughMuzzle();
 }
 
 void UActionCombat::ServerEquipWeapon_Implementation(ACharacter* Character, AWeaponBase* Weapon)
@@ -169,6 +173,20 @@ void UActionCombat::SetAiming(const bool bIsAiming)
 void UActionCombat::ServerSetAiming_Implementation(const bool bIsAiming)
 {
 	CheckAndSetAiming(bIsAiming);
+}
+
+void UActionCombat::DebugLineThroughMuzzle()
+{
+	if (EquippedWeapon)
+	{
+		FTransform MuzzleTipTransform = EquippedWeapon->GetSkeletonMeshComponent()->GetSocketTransform(
+			EquippedWeapon->GetWeaponData().ProjectileSpawnSocket, RTS_World);
+		FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
+		DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MuzzleTipTransform.GetLocation() + MuzzleX * 1000.f,
+		              FColor::Red);
+		DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), HitImpactPoint,
+		              FColor::Green);
+	}
 }
 
 void UActionCombat::EquipWeapon(ACharacter* Character, AWeaponBase* Weapon)

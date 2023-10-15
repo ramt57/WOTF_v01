@@ -34,4 +34,8 @@ struct FItemWeapon : public FTableRowBase
 	UAnimationAsset* FireAnimAssets;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	UAnimMontage* CharacterFireAnimation;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	float ZoomedFOV = 30.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	float ZoomInterpolationSpeed = 20.f;
 };
