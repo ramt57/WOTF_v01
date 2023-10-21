@@ -9,7 +9,7 @@
 #include "ActionCombat.generated.h"
 class AItemBase;
 class AWeaponBase;
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEquippedWeapon, ACharacter*, Character, AWeaponBase*, WeaponB);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEquippedWeapon, AWeaponBase*, WeaponB);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class WOTF_API UActionCombat : public UActorComponent
@@ -34,7 +34,6 @@ private:
 	AWeaponBase* EquippedWeapon;
 	UPROPERTY(ReplicatedUsing=OnRep_IsAiming, VisibleAnywhere)
 	bool IsAiming;
-	void ToggleControllerRotationYawOnAiming() const;
 	UFUNCTION()
 	void OnRep_IsAiming() const;
 	UPROPERTY(Replicated)
@@ -51,9 +50,9 @@ private:
 	float AimMaxWalkCrouchSpeed = 100.f;
 
 	UFUNCTION(Server, Reliable)
-	void ServerEquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
-	void DebugLineThroughMuzzle();
-	void EquipWeapon(ACharacter* Character, AWeaponBase* Weapon);
+	void ServerEquipWeapon(AWeaponBase* Weapon);
+	void DebugLineThroughMuzzle() const;
+	void EquipWeapon(AWeaponBase* Weapon);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY()
@@ -64,17 +63,27 @@ private:
 	void ServerFire(const FVector_NetQuantize& HitTarget);
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiCast_Fire(const FVector_NetQuantize& HitTarget);
-	bool IsLocallyControlled = false;
+	UPROPERTY()
+	ACharacter* Character;
+	
+	/*Fire Rate & Automatic Weapon Related Timer Functions*/
+	FTimerHandle FireTimer;
+	FTimerHandle FireCooldownTimer;
+	void StartFireTimer();
+	void FireTimerCallback();
+	void EnableFiring();
+	bool bCanFire = true;
 public:
 	/* Line Trace Under Crosshairs*/
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
+	void FireWeapon();
 	void FireButtonPressed(bool IsPressed);
 	void SetAiming(const bool bIsAiming);
 	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
 	FOnEquippedWeapon OnEquipWeapon;
 
 	UFUNCTION()
-	void PickupItem(ACharacter* Character, AItemBase* Weapon);
+	void PickupItem(AItemBase* Weapon);
 	FORCEINLINE bool IsPrimaryWeaponEquipped() const
 	{
 		return EquippedWeapon && EquippedWeapon->GetWeaponData().WeaponType == EWeaponType::Primary;

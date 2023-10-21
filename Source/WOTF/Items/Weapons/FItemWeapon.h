@@ -19,11 +19,13 @@ struct FItemWeapon : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	FName AmmoId;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	bool bIsAutomaticWeapon = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int ClipSize;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	float Damage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	float FireRate;
+	float FireRate = 1.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	bool isProjectileWeapon;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")

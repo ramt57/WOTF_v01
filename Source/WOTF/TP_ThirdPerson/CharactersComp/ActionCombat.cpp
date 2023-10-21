@@ -23,14 +23,11 @@ UActionCombat::UActionCombat()
 void UActionCombat::BeginPlay()
 {
 	Super::BeginPlay();
-	if (const auto Character = Cast<ACharacter>(GetOwner()))
-	{
-		IsLocallyControlled = Character->IsLocallyControlled() ? true : false;
-		CharacterAnimInstance = Character->GetMesh()->GetAnimInstance();
-		DefaultMeshRotator = Character->GetMesh()->GetRelativeRotation();
-		BaseMaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
-		BaseMaxWalkCrouchSpeed = Character->GetCharacterMovement()->MaxWalkSpeedCrouched;
-	}
+	Character = Cast<ACharacter>(GetOwner());
+	CharacterAnimInstance = Character->GetMesh()->GetAnimInstance();
+	DefaultMeshRotator = Character->GetMesh()->GetRelativeRotation();
+	BaseMaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
+	BaseMaxWalkCrouchSpeed = Character->GetCharacterMovement()->MaxWalkSpeedCrouched;
 }
 
 void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -47,6 +44,7 @@ void UActionCombat::MultiCast_Fire_Implementation(const FVector_NetQuantize& Hit
 	{
 		if (CharacterAnimInstance && FireWeaponAnimMontage)
 		{
+			FLogUtil::PrintString("Weapon Fired");
 			EquippedWeapon->Fire(HitTarget);
 			CharacterAnimInstance->Montage_Play(FireWeaponAnimMontage);
 			const FName SectionName = FName("Stand_Fire_Single");
@@ -89,17 +87,58 @@ bool UActionCombat::TraceUnderCrosshairs(FHitResult& OutHitResult)
 	return false;
 }
 
-void UActionCombat::FireButtonPressed(const bool IsPressed)
+void UActionCombat::StartFireTimer()
 {
-	if (IsPressed && IsLocallyControlled)
+	if (EquippedWeapon == nullptr) return;
+	// Start the timer if the player can't fire immediately
+	if (!Character->GetWorldTimerManager().IsTimerActive(FireTimer))
+	{
+		Character->GetWorldTimerManager().SetTimer(FireTimer, this, &UActionCombat::FireTimerCallback,
+		                                           EquippedWeapon->GetWeaponData().FireRate, true, 0.f);
+	}
+}
+
+void UActionCombat::FireTimerCallback()
+{
+	FireWeapon();
+}
+
+void UActionCombat::EnableFiring()
+{
+	bCanFire = true;
+}
+
+void UActionCombat::FireWeapon()
+{
+	if (!bCanFire) return;
+	if (Character->IsLocallyControlled())
 	{
 		FHitResult OutHitResult;
 		TraceUnderCrosshairs(OutHitResult);
 		ServerFire(OutHitResult.ImpactPoint);
+		// Prevent firing until the next shot can be taken
+		bCanFire = false;
+		Character->GetWorldTimerManager().SetTimer(FireCooldownTimer, this, &UActionCombat::EnableFiring,
+		                                           EquippedWeapon->GetWeaponData().FireRate, false);
+	}
+}
+
+void UActionCombat::FireButtonPressed(const bool IsPressed)
+{
+	if (IsPressed)
+	{
+		if (EquippedWeapon->GetWeaponData().bIsAutomaticWeapon)
+		{
+			StartFireTimer();
+		}
+		else
+		{
+			FireWeapon();
+		}
 	}
 	else
 	{
-		FLogUtil::PrintString("Firing Released");
+		Character->GetWorldTimerManager().ClearTimer(FireTimer);
 	}
 }
 
@@ -118,25 +157,16 @@ void UActionCombat::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	DebugLineThroughMuzzle();
 }
 
-void UActionCombat::ServerEquipWeapon_Implementation(ACharacter* Character, AWeaponBase* Weapon)
+void UActionCombat::ServerEquipWeapon_Implementation(AWeaponBase* Weapon)
 {
-	EquipWeapon(Character, Weapon);
-}
-
-void UActionCombat::ToggleControllerRotationYawOnAiming() const
-{
-	if (const auto Character = Cast<ACharacter>(GetOwner()))
-	{
-		Character->bUseControllerRotationYaw = IsAiming ? true : false;
-	}
+	EquipWeapon(Weapon);
 }
 
 void UActionCombat::OnRep_IsAiming() const
 {
 	if (EquippedWeapon)
 	{
-		ToggleControllerRotationYawOnAiming();
-		const auto Character = Cast<ACharacter>(GetOwner());
+		Character->bUseControllerRotationYaw = IsAiming ? true : false;
 		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = IsAiming
 			                                                          ? AimMaxWalkCrouchSpeed
 			                                                          : BaseMaxWalkCrouchSpeed;
@@ -149,8 +179,7 @@ void UActionCombat::CheckAndSetAiming(const bool bIsAiming)
 	if (EquippedWeapon)
 	{
 		IsAiming = bIsAiming;
-		const auto Character = Cast<ACharacter>(GetOwner());
-		ToggleControllerRotationYawOnAiming();
+		Character->bUseControllerRotationYaw = IsAiming ? true : false;
 		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = IsAiming
 			                                                          ? AimMaxWalkCrouchSpeed
 			                                                          : BaseMaxWalkCrouchSpeed;
@@ -175,7 +204,7 @@ void UActionCombat::ServerSetAiming_Implementation(const bool bIsAiming)
 	CheckAndSetAiming(bIsAiming);
 }
 
-void UActionCombat::DebugLineThroughMuzzle()
+void UActionCombat::DebugLineThroughMuzzle() const
 {
 	if (EquippedWeapon)
 	{
@@ -189,12 +218,12 @@ void UActionCombat::DebugLineThroughMuzzle()
 	}
 }
 
-void UActionCombat::EquipWeapon(ACharacter* Character, AWeaponBase* Weapon)
+void UActionCombat::EquipWeapon(AWeaponBase* Weapon)
 {
 	EquippedWeapon = Weapon;
 	EquippedWeapon->SetItemState(EItemState::Equipped);
 	EquippedWeapon->SetOwner(Character);
-	OnEquipWeapon.Broadcast(Character, Weapon);
+	OnEquipWeapon.Broadcast(Weapon);
 	switch (Weapon->GetWeaponData().WeaponType)
 	{
 	case EWeaponType::Melee: break;
@@ -221,7 +250,7 @@ void UActionCombat::EquipWeapon(ACharacter* Character, AWeaponBase* Weapon)
 	}
 }
 
-void UActionCombat::PickupItem(ACharacter* Character, AItemBase* Item)
+void UActionCombat::PickupItem(AItemBase* Item)
 {
 	if (Item)
 	{
@@ -231,11 +260,11 @@ void UActionCombat::PickupItem(ACharacter* Character, AItemBase* Item)
 			{
 				if (GetOwner()->HasAuthority())
 				{
-					EquipWeapon(Character, Cast<AWeaponBase>(Item));
+					EquipWeapon(Cast<AWeaponBase>(Item));
 				}
 				else
 				{
-					ServerEquipWeapon(Character, Cast<AWeaponBase>(Item));
+					ServerEquipWeapon(Cast<AWeaponBase>(Item));
 				}
 				break;
 			}

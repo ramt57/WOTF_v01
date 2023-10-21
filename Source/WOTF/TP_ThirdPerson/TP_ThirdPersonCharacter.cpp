@@ -185,7 +185,7 @@ void ATP_ThirdPersonCharacter::Pick()
 	{
 		if (OverlappedItemBase && OverlappedItemBase->GetWidgetVisibility())
 		{
-			ActionCombat->PickupItem(this, OverlappedItemBase);
+			ActionCombat->PickupItem(OverlappedItemBase);
 		}
 	}
 }
@@ -252,7 +252,7 @@ void ATP_ThirdPersonCharacter::FireReleased()
 	}
 }
 
-void ATP_ThirdPersonCharacter::EquippedWeapon(ACharacter* Character, AWeaponBase* Weapon)
+void ATP_ThirdPersonCharacter::EquippedWeapon(AWeaponBase* Weapon)
 {
 }
 
