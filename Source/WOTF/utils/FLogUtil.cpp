@@ -22,6 +22,6 @@ void FLogUtil::PrintString(const FString& Message)
 	// Display the message on screen
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, Message);
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, Message);
 	}
 }

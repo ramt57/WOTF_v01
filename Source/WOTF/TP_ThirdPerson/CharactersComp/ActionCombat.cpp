@@ -36,6 +36,7 @@ void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(UActionCombat, EquippedWeapon);
 	DOREPLIFETIME(UActionCombat, IsAiming);
 	DOREPLIFETIME(UActionCombat, DefaultMeshRotator);
+	DOREPLIFETIME(UActionCombat, bCanFire);
 }
 
 void UActionCombat::MultiCast_Fire_Implementation(const FVector_NetQuantize& HitTarget)
@@ -113,13 +114,13 @@ void UActionCombat::FireWeapon()
 	if (!bCanFire) return;
 	if (Character->IsLocallyControlled())
 	{
-		FHitResult OutHitResult;
-		TraceUnderCrosshairs(OutHitResult);
-		ServerFire(OutHitResult.ImpactPoint);
 		// Prevent firing until the next shot can be taken
 		bCanFire = false;
 		Character->GetWorldTimerManager().SetTimer(FireCooldownTimer, this, &UActionCombat::EnableFiring,
-		                                           EquippedWeapon->GetWeaponData().FireRate, false);
+												   EquippedWeapon->GetWeaponData().FireRate, false);
+		FHitResult OutHitResult;
+		TraceUnderCrosshairs(OutHitResult);
+		ServerFire(OutHitResult.ImpactPoint);
 	}
 }
 

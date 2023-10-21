@@ -72,6 +72,7 @@ private:
 	void StartFireTimer();
 	void FireTimerCallback();
 	void EnableFiring();
+	UPROPERTY(Replicated)
 	bool bCanFire = true;
 public:
 	/* Line Trace Under Crosshairs*/
