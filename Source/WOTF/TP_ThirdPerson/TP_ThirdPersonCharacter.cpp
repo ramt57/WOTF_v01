@@ -12,10 +12,10 @@
 #include "CharactersComp/ActionCombat.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
-#include "WOTF/Items/ItemBase.h"
-#include "WOTF/Items/ItemInterface.h"
-#include "WOTF/Items/Weapons/WeaponBase.h"
-#include "WOTF/utils/FLogUtil.h"
+#include "../Items/ItemBase.h"
+#include "../Items/ItemInterface.h"
+#include "../Items/Weapons/WeaponBase.h"
+#include "../Items/Weapons/AmmoBase.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -256,6 +256,11 @@ void ATP_ThirdPersonCharacter::EquippedWeapon(AWeaponBase* Weapon)
 {
 }
 
+void ATP_ThirdPersonCharacter::EquipAmmo(AAmmoBase* AmmoBase)
+{
+	GetActionCombat()->AddAmmo(AAmmoBase::StaticClass(), AmmoBase->GetAmmoCount());
+}
+
 void ATP_ThirdPersonCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -282,6 +287,7 @@ void ATP_ThirdPersonCharacter::PostInitializeComponents()
 	if (ActionCombat)
 	{
 		ActionCombat->OnEquipWeapon.AddDynamic(this, &ATP_ThirdPersonCharacter::EquippedWeapon);
+		ActionCombat->OnEquipAmmo.AddDynamic(this, &ATP_ThirdPersonCharacter::EquipAmmo);
 	}
 }
 

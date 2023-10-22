@@ -19,12 +19,22 @@ class WOTF_API AWeaponBase : public AItemBase
 public:
 	AWeaponBase();
 protected:
-	virtual void InvalidateItemState() const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void InvalidateItemState() override;
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Weapon Properties", meta=(AllowPrivateAccess="true"))
 	FItemWeapon WeaponData;
 	void PlayFireAnimation() const;
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CurrentAmmo, Category="Weapon Properties")
+	int32 CurrentAmmo;
+	UFUNCTION()
+	void OnRep_CurrentAmmo();
+	void SpendRound();
 public:
+	FORCEINLINE bool IsAmmoEmpty() const
+	{
+		return CurrentAmmo <= 0;
+	}
 	virtual void Fire(const FVector& Vector);
 	FItemWeapon& GetWeaponData()
 	{

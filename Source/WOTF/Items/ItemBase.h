@@ -79,16 +79,17 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item Properties", meta=(AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* SkeletalMeshComponent;
 
-	UPROPERTY(ReplicatedUsing= OnRep_ItemState, VisibleAnywhere)
+	UPROPERTY(ReplicatedUsing= OnRep_ItemState, VisibleAnywhere, Category="Item Properties")
 	EItemState ItemState;
 
 	UFUNCTION()
-	void OnRep_ItemState() const;
+	void OnRep_ItemState();
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, Category="Item Properties")
 	EItemType ItemType;
 protected:
-	virtual void InvalidateItemState() const;
+	virtual void InvalidateItemState();
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 public:
 	FORCEINLINE EItemType& GetItemType()
 	{
@@ -107,5 +108,4 @@ public:
 	}
 private:
 	virtual void ToggleVisibilityOfItemPickupWidget_Implementation(bool Visibility) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

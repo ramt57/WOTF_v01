@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "WOTF/Items/EItemState.h"
+#include "WOTF/Items/Weapons/AmmoBase.h"
 #include "WOTF/Items/Weapons/EWeaponType.h"
 #include "WOTF/Items/Weapons/WeaponBase.h"
 #include "WOTF/utils/FLogUtil.h"
@@ -37,6 +38,7 @@ void UActionCombat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(UActionCombat, IsAiming);
 	DOREPLIFETIME(UActionCombat, DefaultMeshRotator);
 	DOREPLIFETIME(UActionCombat, bCanFire);
+	DOREPLIFETIME_CONDITION(UActionCombat, CarriedAmmo, COND_OwnerOnly);
 }
 
 void UActionCombat::MultiCast_Fire_Implementation(const FVector_NetQuantize& HitTarget)
@@ -45,13 +47,27 @@ void UActionCombat::MultiCast_Fire_Implementation(const FVector_NetQuantize& Hit
 	{
 		if (CharacterAnimInstance && FireWeaponAnimMontage)
 		{
-			FLogUtil::PrintString("Weapon Fired");
+			// FLogUtil::PrintString("Weapon Fired");
 			EquippedWeapon->Fire(HitTarget);
 			CharacterAnimInstance->Montage_Play(FireWeaponAnimMontage);
 			const FName SectionName = FName("Stand_Fire_Single");
 			CharacterAnimInstance->Montage_JumpToSection(SectionName);
 		}
 	}
+}
+
+bool UActionCombat::CanFire() const
+{
+	if (!EquippedWeapon || EquippedWeapon->IsAmmoEmpty())
+	{
+		FLogUtil::PrintString("No Ammo. Please Reload");
+		return false;
+	}
+	return bCanFire;
+}
+
+void UActionCombat::OnRep_CarriedAmmo()
+{
 }
 
 bool UActionCombat::TraceUnderCrosshairs(FHitResult& OutHitResult)
@@ -111,13 +127,13 @@ void UActionCombat::EnableFiring()
 
 void UActionCombat::FireWeapon()
 {
-	if (!bCanFire) return;
+	if (!CanFire()) return;
 	if (Character->IsLocallyControlled())
 	{
 		// Prevent firing until the next shot can be taken
 		bCanFire = false;
 		Character->GetWorldTimerManager().SetTimer(FireCooldownTimer, this, &UActionCombat::EnableFiring,
-												   EquippedWeapon->GetWeaponData().FireRate, false);
+		                                           EquippedWeapon->GetWeaponData().FireRate, false);
 		FHitResult OutHitResult;
 		TraceUnderCrosshairs(OutHitResult);
 		ServerFire(OutHitResult.ImpactPoint);
@@ -219,6 +235,52 @@ void UActionCombat::DebugLineThroughMuzzle() const
 	}
 }
 
+void UActionCombat::AddAmmo(const TSubclassOf<AAmmoBase> AmmoType, const int32 ClipSize)
+{
+	if (int32* ExistingAmmo = AmmoInventory.Find(AmmoType))
+	{
+		// Add a full magazine to the existing count
+		*ExistingAmmo += ClipSize;
+	}
+	else
+	{
+		// Add a new entry for this type of ammo with a full magazine
+		AmmoInventory.Add(AmmoType, ClipSize);
+	}
+	FLogUtil::PrintString(FString::Printf(TEXT("Ammo added %d"), ClipSize));
+}
+
+int32 UActionCombat::WithdrawAmmo(const TSubclassOf<AAmmoBase> AmmoType, const int32 ClipSize)
+{
+	if (int32* ExistingAmmo = AmmoInventory.Find(AmmoType))
+	{
+		// Check if the amount is less than a full magazine size
+		if (*ExistingAmmo < ClipSize)
+		{
+			// Fully remove the ammo clip from inventory and store the amount withdrawn
+			const int32 WithdrawnAmmo = *ExistingAmmo;
+			AmmoInventory.Remove(AmmoType);
+			return WithdrawnAmmo;
+		}
+		else
+		{
+			// Subtract a full magazine from the existing count and return a full magazine
+			*ExistingAmmo -= ClipSize;
+			return ClipSize;
+		}
+	}
+
+	// If the ammo type wasn't found in the inventory, return 0 to indicate nothing was withdrawn.
+	return 0;
+}
+
+void UActionCombat::EquipAmmo(AAmmoBase* Ammo)
+{
+	Ammo->SetItemState(EItemState::Picked);
+	Ammo->SetOwner(Character);
+	OnEquipAmmo.Broadcast(Ammo);
+}
+
 void UActionCombat::EquipWeapon(AWeaponBase* Weapon)
 {
 	EquippedWeapon = Weapon;
@@ -251,6 +313,7 @@ void UActionCombat::EquipWeapon(AWeaponBase* Weapon)
 	}
 }
 
+
 void UActionCombat::PickupItem(AItemBase* Item)
 {
 	if (Item)
@@ -272,6 +335,11 @@ void UActionCombat::PickupItem(AItemBase* Item)
 		case EItemType::Aid: break;
 		case EItemType::Key: break;
 		case EItemType::Misc: break;
+		case EItemType::Ammo:
+			{
+				EquipAmmo(Cast<AAmmoBase>(Item));
+				break;
+			}
 		default: ;
 		}
 	}

@@ -112,6 +112,8 @@ protected:
 	void FireReleased();
 	UFUNCTION()
 	void EquippedWeapon(class AWeaponBase* Weapon);
+	UFUNCTION()
+	void EquipAmmo(class AAmmoBase* AmmoBase);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;

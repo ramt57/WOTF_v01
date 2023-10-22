@@ -7,6 +7,7 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "WOTF/TP_ThirdPerson/CharacterInterface.h"
+#include "WOTF/utils/FLogUtil.h"
 
 
 // Sets default values
@@ -78,12 +79,12 @@ void AItemBase::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComponent, AAc
 	}
 }
 
-void AItemBase::OnRep_ItemState() const
+void AItemBase::OnRep_ItemState()
 {
 	InvalidateItemState();
 }
 
-void AItemBase::InvalidateItemState() const
+void AItemBase::InvalidateItemState()
 {
 	switch (ItemState)
 	{
@@ -106,7 +107,11 @@ void AItemBase::InvalidateItemState() const
 		{
 			break;
 		}
-	case EItemState::Pickup: break;
+	case EItemState::Picked:
+		{
+			FLogUtil::PrintString("Item Picked up");
+			break;
+		};
 	case EItemState::AddedToInventory: break;
 	case EItemState::MaxCount: break;
 	default: ;

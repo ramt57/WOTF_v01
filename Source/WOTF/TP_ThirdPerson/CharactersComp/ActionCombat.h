@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "WOTF/Items/Weapons/AmmoBase.h"
 #include "WOTF/Items/Weapons/EWeaponType.h"
 #include "WOTF/Items/Weapons/WeaponBase.h"
 #include "ActionCombat.generated.h"
 class AItemBase;
 class AWeaponBase;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEquippedWeapon, AWeaponBase*, WeaponB);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEquippedAmmo, AAmmoBase*, AmmoBase);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class WOTF_API UActionCombat : public UActorComponent
@@ -69,11 +71,19 @@ private:
 	/*Fire Rate & Automatic Weapon Related Timer Functions*/
 	FTimerHandle FireTimer;
 	FTimerHandle FireCooldownTimer;
+	/* TODO fix automatic weapon logic as its double the amount of fire delay */
 	void StartFireTimer();
 	void FireTimerCallback();
 	void EnableFiring();
 	UPROPERTY(Replicated)
 	bool bCanFire = true;
+	bool CanFire() const;
+
+	/*TODO can be moved to inventory*/
+	UPROPERTY(ReplicatedUsing=OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
 public:
 	/* Line Trace Under Crosshairs*/
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
@@ -82,7 +92,14 @@ public:
 	void SetAiming(const bool bIsAiming);
 	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
 	FOnEquippedWeapon OnEquipWeapon;
-
+	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
+	FOnEquippedAmmo OnEquipAmmo;
+	TMap<TSubclassOf<AAmmoBase>, int32> AmmoInventory;
+	UFUNCTION()
+	void AddAmmo(TSubclassOf<AAmmoBase> AmmoType, int32 ClipSize);
+	UFUNCTION()
+	int32 WithdrawAmmo(TSubclassOf<AAmmoBase> AmmoType, int32 ClipSize);
+	void EquipAmmo(AAmmoBase* Ammo);
 	UFUNCTION()
 	void PickupItem(AItemBase* Weapon);
 	FORCEINLINE bool IsPrimaryWeaponEquipped() const

@@ -6,6 +6,7 @@
 
 enum class EWeaponType : uint8;
 class AProjectile;
+class AAmmoBase;
 
 USTRUCT(BlueprintType)
 struct FItemWeapon : public FTableRowBase
@@ -17,11 +18,11 @@ struct FItemWeapon : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
 	EWeaponType WeaponType;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	FName AmmoId;
+	TSubclassOf<AAmmoBase> Ammo;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	bool bIsAutomaticWeapon = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	int ClipSize;
+	int32 ClipSize;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	float Damage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")

@@ -3,15 +3,24 @@
 
 #include "WeaponBase.h"
 
+#include "GameFramework/Character.h"
+#include "Net/UnrealNetwork.h"
 #include "WOTF/DataTables/ItemWeaponDataTable.h"
 #include "WOTF/Items/EItemState.h"
+#include "WOTF/utils/FLogUtil.h"
 
 AWeaponBase::AWeaponBase()
 {
 	SetItemType(EItemType::Weapon);
 }
 
-void AWeaponBase::InvalidateItemState() const
+void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AWeaponBase, CurrentAmmo);
+}
+
+void AWeaponBase::InvalidateItemState()
 {
 	Super::InvalidateItemState();
 	switch (GetItemState())
@@ -22,7 +31,7 @@ void AWeaponBase::InvalidateItemState() const
 			GetSkeletonMeshComponent()->SetVisibility(false);
 			break;
 		}
-	case EItemState::Pickup: break;
+	case EItemState::Picked: break;
 	case EItemState::Dropped:
 		{
 			GetStaticMeshComponent()->SetVisibility(true);
@@ -44,9 +53,20 @@ void AWeaponBase::InvalidateItemState() const
 void AWeaponBase::Fire(const FVector& Vector)
 {
 	PlayFireAnimation();
+	SpendRound();
 }
 
 void AWeaponBase::PlayFireAnimation() const
 {
 	GetSkeletonMeshComponent()->PlayAnimation(WeaponData.FireAnimAssets, false);
+}
+
+void AWeaponBase::OnRep_CurrentAmmo()
+{
+}
+
+void AWeaponBase::SpendRound()
+{
+	CurrentAmmo = FMath::Clamp(CurrentAmmo -1, 0, WeaponData.ClipSize);
+	FLogUtil::PrintString(FString::Printf(TEXT("CurrentAmmo: %d"), CurrentAmmo));
 }
