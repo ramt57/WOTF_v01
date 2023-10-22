@@ -153,6 +153,9 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		// Firing Released
 		EnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Completed, this,
 		                                   &ATP_ThirdPersonCharacter::FireReleased);
+		// Reload
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this,
+										   &ATP_ThirdPersonCharacter::ReloadWeapon);
 	}
 }
 
@@ -249,6 +252,14 @@ void ATP_ThirdPersonCharacter::FireReleased()
 	if (ActionCombat)
 	{
 		ActionCombat->FireButtonPressed(false);
+	}
+}
+
+void ATP_ThirdPersonCharacter::ReloadWeapon()
+{
+	if(ActionCombat)
+	{
+		ActionCombat->ReloadWeapon();
 	}
 }
 

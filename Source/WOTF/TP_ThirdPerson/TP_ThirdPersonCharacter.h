@@ -52,6 +52,10 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	/** Firing Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* FiringAction;
+
+	/** Reload Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ReloadAction;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappedItemBase)
 	class AItemBase* OverlappedItemBase;
@@ -110,6 +114,7 @@ protected:
 	void AimingPressed();
 	void FirePressed();
 	void FireReleased();
+	void ReloadWeapon();
 	UFUNCTION()
 	void EquippedWeapon(class AWeaponBase* Weapon);
 	UFUNCTION()

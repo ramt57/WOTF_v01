@@ -27,6 +27,17 @@ private:
 	void PlayFireAnimation() const;
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CurrentAmmo, Category="Weapon Properties")
 	int32 CurrentAmmo;
+
+public:
+	void SetCurrentAmmo(const int8 AmmoCount)
+	{
+		this->CurrentAmmo = AmmoCount;
+	}
+	FORCEINLINE int32 GetCurrentAmmo()
+	{
+		return CurrentAmmo;
+	}
+private:
 	UFUNCTION()
 	void OnRep_CurrentAmmo();
 	void SpendRound();

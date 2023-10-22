@@ -89,6 +89,7 @@ public:
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
 	void FireWeapon();
 	void FireButtonPressed(bool IsPressed);
+	void ReloadWeapon();
 	void SetAiming(const bool bIsAiming);
 	UPROPERTY(BlueprintAssignable, Category = "Equip Weapon")
 	FOnEquippedWeapon OnEquipWeapon;

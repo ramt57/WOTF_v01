@@ -159,6 +159,22 @@ void UActionCombat::FireButtonPressed(const bool IsPressed)
 	}
 }
 
+void UActionCombat::ReloadWeapon()
+{
+	FLogUtil::PrintString("Reloading...");
+	if (EquippedWeapon == nullptr) return;
+	const TSubclassOf<AAmmoBase> Ammo = EquippedWeapon->GetWeaponData().Ammo->GetClass();
+	if (const int8 AmmoCount = WithdrawAmmo(AAmmoBase::StaticClass(), EquippedWeapon->GetWeaponData().ClipSize); AmmoCount > 0)
+	{
+		AddAmmo(AAmmoBase::StaticClass(), EquippedWeapon->GetCurrentAmmo());
+		EquippedWeapon->SetCurrentAmmo(AmmoCount);
+	}
+	else
+	{
+		FLogUtil::PrintString("No Ammo Found");
+	}
+}
+
 void UActionCombat::ServerFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
 	MultiCast_Fire(HitTarget);
@@ -247,7 +263,6 @@ void UActionCombat::AddAmmo(const TSubclassOf<AAmmoBase> AmmoType, const int32 C
 		// Add a new entry for this type of ammo with a full magazine
 		AmmoInventory.Add(AmmoType, ClipSize);
 	}
-	FLogUtil::PrintString(FString::Printf(TEXT("Ammo added %d"), ClipSize));
 }
 
 int32 UActionCombat::WithdrawAmmo(const TSubclassOf<AAmmoBase> AmmoType, const int32 ClipSize)
@@ -262,12 +277,9 @@ int32 UActionCombat::WithdrawAmmo(const TSubclassOf<AAmmoBase> AmmoType, const i
 			AmmoInventory.Remove(AmmoType);
 			return WithdrawnAmmo;
 		}
-		else
-		{
-			// Subtract a full magazine from the existing count and return a full magazine
-			*ExistingAmmo -= ClipSize;
-			return ClipSize;
-		}
+		// Subtract a full magazine from the existing count and return a full magazine
+		*ExistingAmmo -= ClipSize;
+		return ClipSize;
 	}
 
 	// If the ammo type wasn't found in the inventory, return 0 to indicate nothing was withdrawn.
