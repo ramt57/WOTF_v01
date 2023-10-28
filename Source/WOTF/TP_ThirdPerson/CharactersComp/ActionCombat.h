@@ -128,3 +128,9 @@ public:
 		return EquippedWeapon;
 	}
 };
+/*TODO
+ * Item Pickup of Ammo is not destoryed when picking from client
+ * also Reloading works fine
+ * Item is not picked when othere player was in the same collison circle
+ *
+ */
