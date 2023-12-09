@@ -4,6 +4,7 @@
 /DerivedDataCache/
 /Intermediate/
 /Saved/
+Plugins/*
 /.idea/
 # Temprary need to remove it 
 /Content
