@@ -93,6 +93,7 @@ bool UActionCombat::TraceUnderCrosshairs(FHitResult& OutHitResult)
 		/* Trace from cross hairs world location outward */
 		const FVector Start = {CrosshairWorldPosition};
 		const FVector End = {Start + CrosshairWorldDirection * 50000.f};
+		
 		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, ECC_Visibility);
 		if (!OutHitResult.bBlockingHit)
 		{

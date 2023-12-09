@@ -23,15 +23,32 @@
 // ATP_ThirdPersonCharacter
 
 
+void ATP_ThirdPersonCharacter::SetTurnInPlace(float DeltaSeconds)
+{
+	if (AO_Yaw > 90.f)
+	{
+		TurnInPlace = ETurnInPlace::ETIP_RIGHT;
+	}
+	else if (AO_Yaw < -90.f)
+	{
+		TurnInPlace = ETurnInPlace::ETIP_LEFT;
+	}
+	else
+	{
+		TurnInPlace = ETurnInPlace::ETIP_CENTER;
+	}
+}
+
 void ATP_ThirdPersonCharacter::CalculateAimOffset(float DeltaSeconds)
 {
-	if (GetCharacterMovement()->IsMovingOnGround() && GetCharacterMovement()->Velocity.Size2D() > 3.0f)
+	if (GetCharacterMovement()->IsMovingOnGround() && GetCharacterMovement()->Velocity.Size2D() <= 3.f)
 	{
 		FRotator StartingAimRotator = FRotator(0, GetActorRotation().Yaw, 0);
 		FRotator CurrentAimRotator = FRotator(0, GetBaseAimRotation().Yaw, 0);
 		FRotator DeltaAimRotator =
 			UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotator, StartingAimRotator);
 		AO_Yaw = DeltaAimRotator.Yaw;
+		SetTurnInPlace(DeltaSeconds);
 	}
 	else
 	{
@@ -44,7 +61,7 @@ void ATP_ThirdPersonCharacter::CalculateAimOffset(float DeltaSeconds)
 		FVector2D OutRange(-90.f, 0.f);
 		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
 	}
-	// FLogUtil::Warning(FString::Printf(TEXT("Yaw Rotation %f & Pitch Rotation %f"), AO_Yaw, AO_Pitch));
+	FLogUtil::Warning(FString::Printf(TEXT("Yaw Rotation %f & Pitch Rotation %f"), AO_Yaw, AO_Pitch));
 }
 
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
@@ -86,7 +103,7 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 	ActionCombat = CreateDefaultSubobject<UActionCombat>(TEXT("Action"));
 	ActionCombat->SetIsReplicated(true);
-
+	TurnInPlace = ETurnInPlace::ETIP_CENTER;
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -156,11 +173,11 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		                                   &ATP_ThirdPersonCharacter::FireReleased);
 		// Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this,
-										   &ATP_ThirdPersonCharacter::ReloadWeapon);
+		                                   &ATP_ThirdPersonCharacter::ReloadWeapon);
 
 		// Sprint
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this,
-										   &ATP_ThirdPersonCharacter::ReloadWeapon);
+		                                   &ATP_ThirdPersonCharacter::SprintToggle);
 	}
 }
 
@@ -262,7 +279,7 @@ void ATP_ThirdPersonCharacter::FireReleased()
 
 void ATP_ThirdPersonCharacter::ReloadWeapon()
 {
-	if(ActionCombat)
+	if (ActionCombat)
 	{
 		ActionCombat->ReloadWeapon();
 	}
@@ -270,7 +287,8 @@ void ATP_ThirdPersonCharacter::ReloadWeapon()
 
 void ATP_ThirdPersonCharacter::SprintToggle()
 {
-	FLogUtil::PrintString("Sprint");
+	SprintPressed = !SprintPressed;
+	GetCharacterMovement()->MaxWalkSpeed = SprintPressed ? 600.f : 312.f;
 }
 
 void ATP_ThirdPersonCharacter::EquippedWeapon(AWeaponBase* Weapon)

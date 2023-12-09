@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CharacterInterface.h"
+#include "ECharacterEnums.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "TP_ThirdPersonCharacter.generated.h"
@@ -60,7 +61,7 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	/** Sprint Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SprintAction;
-	
+
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappedItemBase)
 	class AItemBase* OverlappedItemBase;
 	UFUNCTION()
@@ -90,10 +91,18 @@ private:
 
 	UPROPERTY()
 	float AO_Pitch;
+	void SetTurnInPlace(float DeltaSeconds);
 	void CalculateAimOffset(float DeltaSeconds);
 	UPROPERTY()
 	UAnimInstance* AnimInstance;
+	ETurnInPlace TurnInPlace;
 public:
+	FORCEINLINE ETurnInPlace GetTurnInPlace()
+	{
+		return TurnInPlace;
+	}
+
+	UPROPERTY(EditAnywhere)
 	float DefaultCameraFov;
 	float CurrentCameraFov;
 	void InterpFOV(float DeltaTime);
@@ -104,6 +113,12 @@ public:
 
 	ATP_ThirdPersonCharacter();
 	virtual void Tick(float DeltaSeconds) override;
+	bool SprintPressed;
+
+	FORCEINLINE bool GetIsSprinting() const
+	{
+		return SprintPressed;
+	}
 
 protected:
 	/** Called for movement input */
@@ -127,7 +142,7 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
-	
+
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
