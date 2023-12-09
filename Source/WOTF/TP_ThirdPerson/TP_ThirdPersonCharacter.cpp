@@ -16,6 +16,7 @@
 #include "../Items/ItemInterface.h"
 #include "../Items/Weapons/WeaponBase.h"
 #include "../Items/Weapons/AmmoBase.h"
+#include "WOTF/utils/FLogUtil.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -156,6 +157,10 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		// Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this,
 										   &ATP_ThirdPersonCharacter::ReloadWeapon);
+
+		// Sprint
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this,
+										   &ATP_ThirdPersonCharacter::ReloadWeapon);
 	}
 }
 
@@ -261,6 +266,11 @@ void ATP_ThirdPersonCharacter::ReloadWeapon()
 	{
 		ActionCombat->ReloadWeapon();
 	}
+}
+
+void ATP_ThirdPersonCharacter::SprintToggle()
+{
+	FLogUtil::PrintString("Sprint");
 }
 
 void ATP_ThirdPersonCharacter::EquippedWeapon(AWeaponBase* Weapon)

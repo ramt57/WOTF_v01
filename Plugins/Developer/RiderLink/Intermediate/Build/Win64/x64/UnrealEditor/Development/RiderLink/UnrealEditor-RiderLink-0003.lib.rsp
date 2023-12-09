@@ -1,0 +1,11 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-RiderLink-0003.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\Users\ramt5\OneDrive\Documents\Unreal Projects\WOTF\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLink\Module.RiderLink.cpp.obj"
+"C:\Users\ramt5\OneDrive\Documents\Unreal Projects\WOTF\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLink\Default.rc2.res"
+/OUT:"C:\Users\ramt5\OneDrive\Documents\Unreal Projects\WOTF\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLink\UnrealEditor-RiderLink-0003.lib"

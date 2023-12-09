@@ -27,6 +27,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement Data")
 	FVector Velocity;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement Data")
+	float Direction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement Data")
 	bool ShouldMove;

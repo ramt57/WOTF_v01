@@ -10,7 +10,7 @@ public class WOTF : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "OnlineSubsystemSteam", "UMG" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "EnhancedInput" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput", "EnhancedInput", "AnimGraphRuntime", "AnimGraphRuntime" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

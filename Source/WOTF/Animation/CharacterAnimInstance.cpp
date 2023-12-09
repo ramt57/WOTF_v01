@@ -3,6 +3,7 @@
 
 #include "CharacterAnimInstance.h"
 
+#include "KismetAnimationLibrary.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "WOTF/TP_ThirdPerson/TP_ThirdPersonCharacter.h"
@@ -21,6 +22,7 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (Character == nullptr) return;
 	Velocity = Character->GetCharacterMovement()->Velocity;
 	GroundSpeed = Velocity.Size2D();
+	Direction = UKismetAnimationLibrary::CalculateDirection(Velocity,Character->GetActorRotation());
 	IsFalling = Character->GetCharacterMovement()->IsFalling();
 	ShouldMove = Character->GetCharacterMovement()->IsMovingOnGround() && GroundSpeed > 3.0f;
 	IsPrimaryWeaponEquip = Character->GetActionCombat()->IsPrimaryWeaponEquipped();
