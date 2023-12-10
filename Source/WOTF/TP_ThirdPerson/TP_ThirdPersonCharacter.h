@@ -62,6 +62,10 @@ class ATP_ThirdPersonCharacter : public ACharacter, public ICharacterInterface
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SprintAction;
 
+	/** Sprint Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DirectionalRoll;
+	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappedItemBase)
 	class AItemBase* OverlappedItemBase;
 	UFUNCTION()
@@ -129,6 +133,8 @@ protected:
 
 	/** Called for pick input */
 	void Pick();
+	UFUNCTION()
+	void StartDirectionalRoll();
 	void CrouchPressed();
 	void AimingPressed();
 	void FirePressed();

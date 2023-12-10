@@ -61,7 +61,7 @@ void ATP_ThirdPersonCharacter::CalculateAimOffset(float DeltaSeconds)
 		FVector2D OutRange(-90.f, 0.f);
 		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
 	}
-	FLogUtil::Warning(FString::Printf(TEXT("Yaw Rotation %f & Pitch Rotation %f"), AO_Yaw, AO_Pitch));
+	// FLogUtil::Warning(FString::Printf(TEXT("Yaw Rotation %f & Pitch Rotation %f"), AO_Yaw, AO_Pitch));
 }
 
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
@@ -178,6 +178,10 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(class UInputComponent* 
 		// Sprint
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this,
 		                                   &ATP_ThirdPersonCharacter::SprintToggle);
+
+		//Roll
+		EnhancedInputComponent->BindAction(DirectionalRoll, ETriggerEvent::Triggered, this,
+										   &ATP_ThirdPersonCharacter::StartDirectionalRoll);
 	}
 }
 
@@ -213,6 +217,11 @@ void ATP_ThirdPersonCharacter::Pick()
 			ActionCombat->PickupItem(OverlappedItemBase);
 		}
 	}
+}
+
+void ATP_ThirdPersonCharacter::StartDirectionalRoll()
+{
+	
 }
 
 void ATP_ThirdPersonCharacter::CrouchPressed()

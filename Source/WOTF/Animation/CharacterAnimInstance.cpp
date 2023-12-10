@@ -35,34 +35,4 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	AO_Yaw = Character->GetAO_Yaw();
 	AO_Pitch = Character->GetAO_Pitch();
 	IsSprinting = Character->GetCharacterMovement()->IsMovingOnGround() && GroundSpeed > 350.0f;
-	if (Character->IsLocallyControlled())
-	{
-		CalculateLookingPosition();
-	}
-}
-
-void UCharacterAnimInstance::CalculateLookingPosition()
-{
-	/* Get ViewPort Size */
-	FVector2D ViewPortSize;
-	if (GEngine && GEngine->GameViewport)
-	{
-		GEngine->GameViewport->GetViewportSize(ViewPortSize);
-	}
-
-	/* Get Screen space location of cross hairs which is usually a center of screen for most of the games*/
-	const FVector2D CrosshairLocation(ViewPortSize.X / 2.f, ViewPortSize.Y / 2.f);
-	FVector CrosshairWorldPosition;
-	FVector CrosshairWorldDirection;
-
-	/* Get World position and direction of cross hairs */
-	if (UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
-	                                             CrosshairLocation,
-	                                             CrosshairWorldPosition,
-	                                             CrosshairWorldDirection))
-	{
-		/* Trace from cross hairs world location outward */
-		const FVector Start = {CrosshairWorldPosition};
-		CharacterLookingWorldPosition = {Start + CrosshairWorldDirection * 50000.f};
-	}
 }
